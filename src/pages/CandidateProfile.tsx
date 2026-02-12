@@ -6,11 +6,21 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, User, ClipboardCheck, FileText, CalendarDays,
   FileSignature, CheckSquare, Users, Activity, GraduationCap,
-  Home, StickyNote, MapPin, Phone, Mail, ExternalLink, Trash2
+  Home, StickyNote, MapPin, Phone, Mail, ExternalLink, Trash2,
+  Edit, Plus, Send, Link as LinkIcon, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
@@ -53,7 +63,7 @@ function dbToCandidate(db: DbCandidate): Candidate {
 export default function CandidateProfile() {
   const { id } = useParams();
   const { isDemoMode } = useDemoMode();
-  const { candidates: dbCandidates, deleteCandidate } = useCandidates();
+  const { candidates: dbCandidates, deleteCandidate, updateCandidate } = useCandidates();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("personal");
 
@@ -66,26 +76,36 @@ export default function CandidateProfile() {
       <div className="flex items-center justify-center h-[60vh]">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Candidate not found</p>
-          <Link to="/">
-            <Button variant="outline">Back to Dashboard</Button>
-          </Link>
+          <Link to="/"><Button variant="outline">Back to Dashboard</Button></Link>
         </div>
       </div>
     );
   }
 
   const isAtRisk = candidate.risk_level === "high";
-  const scores = candidate.tribe_viral_scores;
+
+  const handleDelete = async () => {
+    try {
+      await deleteCandidate(candidate.id);
+      navigate("/");
+    } catch (e) {
+      // toast handled by hook
+    }
+  };
+
+  const handleUpdate = async (updates: Record<string, any>) => {
+    try {
+      await updateCandidate({ id: candidate.id, ...updates });
+    } catch (e) {
+      // toast handled by hook
+    }
+  };
 
   return (
     <div className="max-w-[1600px] mx-auto">
-      {/* At-risk banner */}
       {isAtRisk && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-destructive/15 border border-destructive/30 rounded-xl p-4 mb-6 flex items-center gap-3"
-        >
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-destructive/15 border border-destructive/30 rounded-xl p-4 mb-6 flex items-center gap-3">
           <span className="text-lg">🚨</span>
           <div>
             <p className="text-sm font-semibold text-destructive">GHOSTING RISK</p>
@@ -93,53 +113,28 @@ export default function CandidateProfile() {
               No contact for {Math.floor((Date.now() - new Date(candidate.last_contact_date).getTime()) / 86400000)} days — Engagement score: {candidate.engagement_score}%
             </p>
           </div>
-          <Button size="sm" variant="outline" className="ml-auto border-destructive/50 text-destructive hover:bg-destructive/10">
-            Send Check-In
-          </Button>
+          <Button size="sm" variant="outline" className="ml-auto border-destructive/50 text-destructive hover:bg-destructive/10">Send Check-In</Button>
         </motion.div>
       )}
 
-      {/* Back button + Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Link to="/">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="w-4 h-4" /> Back
-          </Button>
-        </Link>
+        <Link to="/"><Button variant="ghost" size="sm" className="gap-2"><ArrowLeft className="w-4 h-4" /> Back</Button></Link>
       </div>
 
       <div className="flex gap-6">
-        {/* Sidebar */}
-        <motion.aside
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="hidden lg:block w-56 flex-shrink-0"
-        >
+        <motion.aside initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="hidden lg:block w-56 flex-shrink-0">
           <div className="bg-card rounded-xl border border-border/50 p-3 sticky top-24">
             {sidebarItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  activeSection === item.id
-                    ? "bg-primary/15 text-primary font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                }`}
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label}
+              <button key={item.id} onClick={() => setActiveSection(item.id)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${activeSection === item.id ? "bg-primary/15 text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"}`}>
+                <item.icon className="w-4 h-4" />{item.label}
               </button>
             ))}
           </div>
         </motion.aside>
 
-        {/* Main content */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex-1 min-w-0"
-        >
-          {/* Profile header card */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex-1 min-w-0">
+          {/* Profile header */}
           <div className="bg-card rounded-xl border border-border/50 p-6 mb-6">
             <div className="flex items-start gap-5">
               <div className="w-20 h-20 rounded-full bg-muted overflow-hidden border-2 border-border flex-shrink-0">
@@ -148,14 +143,8 @@ export default function CandidateProfile() {
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-1">
                   <h1 className="text-xl font-bold">{candidate.full_name}</h1>
-                  <Badge variant={isAtRisk ? "destructive" : "secondary"}>
-                    {STAGE_LABELS[candidate.current_stage]}
-                  </Badge>
-                  {candidate.archetype && (
-                    <Badge variant="outline" className="capitalize">
-                      {candidate.archetype}
-                    </Badge>
-                  )}
+                  <Badge variant={isAtRisk ? "destructive" : "secondary"}>{STAGE_LABELS[candidate.current_stage]}</Badge>
+                  {candidate.archetype && <Badge variant="outline" className="capitalize">{candidate.archetype}</Badge>}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" />{candidate.email}</span>
@@ -173,111 +162,150 @@ export default function CandidateProfile() {
                   <span className="text-xs text-muted-foreground">Source: {candidate.referral_source}</span>
                 </div>
               </div>
-              <Button size="sm" className="gap-2 gold-glow-hover">
-                <FileText className="w-4 h-4" /> Generate Dossier
-              </Button>
             </div>
           </div>
 
-          {/* Sections */}
-          {activeSection === "personal" && <PersonalInfo candidate={candidate} isDemoMode={isDemoMode} onDelete={!isDemoMode ? async () => { await deleteCandidate(candidate.id); navigate("/"); } : undefined} />}
+          {activeSection === "personal" && <PersonalInfo candidate={candidate} isDemoMode={isDemoMode} onDelete={!isDemoMode ? handleDelete : undefined} onUpdate={!isDemoMode ? handleUpdate : undefined} />}
           {activeSection === "prescreening" && <PreScreening candidate={candidate} />}
-          {activeSection === "dossier" && <PlaceholderSection title="Dossier & Submission" emoji="📄" description="Generate and track PIN-protected dossiers for hiring managers." />}
-          {activeSection === "interviews" && <PlaceholderSection title="Interview Tracker" emoji="📅" description="Schedule and track interview rounds, outcomes, and notes." />}
-          {activeSection === "offer" && <PlaceholderSection title="Offer Management" emoji="✍️" description="Create offers, track negotiations, and collect e-signatures." />}
-          {activeSection === "logistics" && <LogisticsSection />}
+          {activeSection === "dossier" && <DossierSection candidate={candidate} isDemoMode={isDemoMode} />}
+          {activeSection === "interviews" && <InterviewSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
+          {activeSection === "offer" && <OfferSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
+          {activeSection === "logistics" && <LogisticsSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
           {activeSection === "buddy" && <PlaceholderSection title="Buddy Assignment" emoji="🤝" description="Match candidates with team buddies based on archetype compatibility." />}
           {activeSection === "engagement" && <EngagementSection candidate={candidate} />}
-          {activeSection === "academy" && <PlaceholderSection title="Academy Training Progress" emoji="📚" description="Academy integration coming soon — track learning paths, quiz scores, and certifications." isPlaceholder />}
-          {activeSection === "housing" && <PlaceholderSection title="Housing Accommodation" emoji="🏠" description="Housing integration coming soon — property details, lease status, and move-in coordination." isPlaceholder />}
-          {activeSection === "notes" && <PlaceholderSection title="Notes & Timeline" emoji="📝" description="Internal notes and auto-generated activity timeline." />}
+          {activeSection === "academy" && <PlaceholderSection title="Academy Training Progress" emoji="📚" description="Academy integration coming soon." isPlaceholder />}
+          {activeSection === "housing" && <PlaceholderSection title="Housing Accommodation" emoji="🏠" description="Housing integration coming soon." isPlaceholder />}
+          {activeSection === "notes" && <NotesSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
         </motion.div>
       </div>
     </div>
   );
 }
 
-function PersonalInfo({ candidate, onDelete, isDemoMode }: { candidate: Candidate; onDelete?: () => void; isDemoMode: boolean }) {
+/* ===================== PERSONAL INFO ===================== */
+function PersonalInfo({ candidate, onDelete, onUpdate, isDemoMode }: { candidate: Candidate; onDelete?: () => void; onUpdate?: (u: Record<string, any>) => void; isDemoMode: boolean }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    full_name: candidate.full_name, email: candidate.email, phone: candidate.phone,
+    current_location: candidate.current_location, desired_location: candidate.desired_location, referral_source: candidate.referral_source,
+  });
+
+  const handleSave = () => {
+    onUpdate?.(form);
+    setEditing(false);
+  };
+
+  const fields = [
+    { label: "Full Name", key: "full_name" }, { label: "Email", key: "email" }, { label: "Phone", key: "phone" },
+    { label: "Current Location", key: "current_location" }, { label: "Desired Location", key: "desired_location" }, { label: "Referral Source", key: "referral_source" },
+  ] as const;
+
   return (
     <div className="bg-card rounded-xl border border-border/50 p-6">
-      <h2 className="text-lg font-semibold mb-4">Personal Information</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Personal Information</h2>
+        {!isDemoMode && !editing && (
+          <Button variant="ghost" size="sm" className="gap-2" onClick={() => setEditing(true)}><Edit className="w-3.5 h-3.5" />Edit</Button>
+        )}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {[
-          { label: "Full Name", value: candidate.full_name },
-          { label: "Email", value: candidate.email },
-          { label: "Phone", value: candidate.phone },
-          { label: "Current Location", value: candidate.current_location },
-          { label: "Desired Location", value: candidate.desired_location },
-          { label: "Referral Source", value: candidate.referral_source },
-        ].map((field) => (
+        {fields.map((field) => (
           <div key={field.label}>
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{field.label}</label>
-            <p className="mt-1 text-sm font-medium">{field.value}</p>
+            {editing ? (
+              <Input value={form[field.key]} onChange={(e) => setForm(f => ({ ...f, [field.key]: e.target.value }))} className="mt-1 bg-muted/50" />
+            ) : (
+              <p className="mt-1 text-sm font-medium">{(candidate as any)[field.key] || "—"}</p>
+            )}
           </div>
         ))}
       </div>
       {!isDemoMode && (
         <div className="flex gap-3 mt-6 pt-6 border-t border-border/50">
-          <Button size="sm" className="gold-glow-hover">Save Changes</Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10 gap-2">
-                <Trash2 className="w-3.5 h-3.5" />Delete Candidate
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-card border-border/50">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete {candidate.full_name}?</AlertDialogTitle>
-                <AlertDialogDescription>This action cannot be undone. All data for this candidate will be permanently removed.</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {editing ? (
+            <>
+              <Button size="sm" className="gold-glow-hover" onClick={handleSave}>Save Changes</Button>
+              <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
+            </>
+          ) : (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10 gap-2"><Trash2 className="w-3.5 h-3.5" />Delete Candidate</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-card border-border/50">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete {candidate.full_name}?</AlertDialogTitle>
+                  <AlertDialogDescription>This action cannot be undone. All data for this candidate will be permanently removed.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function PreScreening({ candidate }: { candidate: typeof mockCandidates[0] }) {
+/* ===================== PRE-SCREENING ===================== */
+function PreScreening({ candidate }: { candidate: Candidate }) {
+  const [linksOpen, setLinksOpen] = useState(false);
   const scores = candidate.tribe_viral_scores;
   const dimensions = scores
     ? [
-        { name: "Autonomy", score: scores.autonomy },
-        { name: "Collaboration", score: scores.collaboration },
-        { name: "Precision", score: scores.precision },
-        { name: "Adaptability", score: scores.adaptability },
-        { name: "Leadership", score: scores.leadership },
+        { name: "Autonomy", score: scores.autonomy }, { name: "Collaboration", score: scores.collaboration },
+        { name: "Precision", score: scores.precision }, { name: "Adaptability", score: scores.adaptability }, { name: "Leadership", score: scores.leadership },
       ]
     : [];
 
+  const tribeViralLink = `yoursite.com/tribe-viral?c=${candidate.id}`;
+  const careerCompassLink = `yoursite.com/career-compass?c=${candidate.id}`;
+
   return (
     <div className="space-y-6">
-      {/* Tribe-Viral */}
       <div className="bg-card rounded-xl border border-border/50 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Tribe-Viral Assessment</h2>
-          <Button variant="ghost" size="sm" className="gap-1 text-primary">
-            <ExternalLink className="w-3.5 h-3.5" /> View Full Assessment
-          </Button>
+          <div className="flex gap-2">
+            <Dialog open={linksOpen} onOpenChange={setLinksOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1"><Send className="w-3.5 h-3.5" />Send Assessment Links</Button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-border/50 max-w-lg">
+                <DialogHeader><DialogTitle>Assessment Links</DialogTitle></DialogHeader>
+                <p className="text-sm text-muted-foreground mb-4">Share these links with the candidate to complete their assessments.</p>
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Tribe-Viral Assessment</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input value={tribeViralLink} readOnly className="bg-muted/50 font-mono text-xs" />
+                      <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(tribeViralLink); }}><LinkIcon className="w-3.5 h-3.5" /></Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Career Compass</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input value={careerCompassLink} readOnly className="bg-muted/50 font-mono text-xs" />
+                      <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(careerCompassLink); }}><LinkIcon className="w-3.5 h-3.5" /></Button>
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button variant="ghost" size="sm" className="gap-1 text-primary"><ExternalLink className="w-3.5 h-3.5" /> View Full Assessment</Button>
+          </div>
         </div>
         {candidate.archetype ? (
           <>
             <div className="flex items-center gap-3 mb-6">
-              <span className="text-3xl">
-                {candidate.archetype === "lion" ? "🦁" : candidate.archetype === "whale" ? "🐋" : "🦅"}
-              </span>
+              <span className="text-3xl">{candidate.archetype === "lion" ? "🦁" : candidate.archetype === "whale" ? "🐋" : "🦅"}</span>
               <div>
                 <p className="font-semibold capitalize text-lg">{candidate.archetype} Archetype</p>
                 <p className="text-sm text-muted-foreground">
-                  {candidate.archetype === "lion"
-                    ? "Natural leader, high autonomy, results-driven"
-                    : candidate.archetype === "whale"
-                    ? "Team player, collaborative, relationship-focused"
-                    : "Detail-oriented, precise, quality-driven"}
+                  {candidate.archetype === "lion" ? "Natural leader, high autonomy, results-driven" : candidate.archetype === "whale" ? "Team player, collaborative, relationship-focused" : "Detail-oriented, precise, quality-driven"}
                 </p>
               </div>
             </div>
@@ -285,14 +313,8 @@ function PreScreening({ candidate }: { candidate: typeof mockCandidates[0] }) {
               {dimensions.map((dim) => (
                 <div key={dim.name} className="text-center">
                   <div className="relative w-full h-24 flex items-end justify-center mb-2">
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: `${dim.score}%` }}
-                      transition={{ duration: 0.8, delay: 0.2 }}
-                      className={`w-8 rounded-t-md ${
-                        dim.score >= 80 ? "bg-success" : dim.score >= 60 ? "bg-primary" : "bg-muted-foreground/30"
-                      }`}
-                    />
+                    <motion.div initial={{ height: 0 }} animate={{ height: `${dim.score}%` }} transition={{ duration: 0.8, delay: 0.2 }}
+                      className={`w-8 rounded-t-md ${dim.score >= 80 ? "bg-success" : dim.score >= 60 ? "bg-primary" : "bg-muted-foreground/30"}`} />
                   </div>
                   <p className="text-xs font-medium">{dim.name}</p>
                   <p className="text-xs text-muted-foreground">{dim.score}</p>
@@ -305,13 +327,10 @@ function PreScreening({ candidate }: { candidate: typeof mockCandidates[0] }) {
         )}
       </div>
 
-      {/* Career Compass */}
       <div className="bg-card rounded-xl border border-border/50 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Career Compass</h2>
-          <Button variant="ghost" size="sm" className="gap-1 text-primary">
-            <ExternalLink className="w-3.5 h-3.5" /> View Full Roadmap
-          </Button>
+          <Button variant="ghost" size="sm" className="gap-1 text-primary"><ExternalLink className="w-3.5 h-3.5" /> View Full Roadmap</Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {["Become Head Chef within 2 years", "Achieve Michelin recognition", "Open own restaurant by 35"].map((milestone, i) => (
@@ -321,8 +340,6 @@ function PreScreening({ candidate }: { candidate: typeof mockCandidates[0] }) {
             </div>
           ))}
         </div>
-
-        {/* Pre-screening status */}
         <div className="mt-6 pt-6 border-t border-border/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -332,11 +349,6 @@ function PreScreening({ candidate }: { candidate: typeof mockCandidates[0] }) {
                 <Badge variant="secondary">Pre-Screening Incomplete</Badge>
               )}
             </div>
-            {candidate.prescreening_complete && (
-              <Button size="sm" className="gold-glow-hover gap-2">
-                <FileText className="w-4 h-4" /> Generate Dossier
-              </Button>
-            )}
           </div>
         </div>
       </div>
@@ -344,18 +356,305 @@ function PreScreening({ candidate }: { candidate: typeof mockCandidates[0] }) {
   );
 }
 
-function LogisticsSection() {
-  const items = [
-    { name: "Visa Status", status: "in_progress", enabled: true },
-    { name: "Police Check", status: "complete", enabled: true },
-    { name: "Flight Booking", status: "pending", enabled: true },
-    { name: "Housing Secured", status: "pending", enabled: true },
-    { name: "Academy Training", status: "pending", enabled: false },
-    { name: "Pre-Arrival Call", status: "pending", enabled: true },
+/* ===================== DOSSIER SECTION ===================== */
+function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDemoMode: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [managerNotes, setManagerNotes] = useState("");
+  const { toast } = useToast();
+
+  const handleGenerate = () => {
+    const pin = Math.random().toString().slice(2, 8);
+    const code = Math.random().toString(36).slice(2, 10);
+    toast({
+      title: "Dossier Generated",
+      description: `PIN: ${pin} — Link: yoursite.com/dossier/${code}`,
+    });
+    setOpen(false);
+    setManagerNotes("");
+  };
+
+  return (
+    <div className="bg-card rounded-xl border border-border/50 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Dossier & Submission</h2>
+        {!isDemoMode && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2 gold-glow-hover" disabled={!candidate.prescreening_complete}>
+                <FileText className="w-4 h-4" />Generate Dossier
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border-border/50 max-w-lg">
+              <DialogHeader><DialogTitle>Generate Dossier</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Hiring Manager</Label>
+                  <Select><SelectTrigger className="mt-1 bg-muted/50"><SelectValue placeholder="Select hiring manager" /></SelectTrigger>
+                    <SelectContent><SelectItem value="placeholder">No managers configured yet</SelectItem></SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Manager Notes</Label>
+                  <Textarea value={managerNotes} onChange={(e) => setManagerNotes(e.target.value)} placeholder="Add notes for the hiring manager..." className="mt-1 bg-muted/50" />
+                </div>
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                  <Button className="gold-glow-hover" onClick={handleGenerate}>Generate PIN & Link</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+      {!candidate.prescreening_complete && (
+        <p className="text-sm text-muted-foreground">Pre-screening must be completed before generating a dossier.</p>
+      )}
+      <div className="flex flex-col items-center justify-center py-12">
+        <span className="text-4xl mb-3">📄</span>
+        <p className="text-sm text-muted-foreground text-center max-w-md">Generate and track PIN-protected dossiers for hiring managers.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ===================== INTERVIEW SECTION ===================== */
+function InterviewSection({ candidateId, isDemoMode }: { candidateId: string; isDemoMode: boolean }) {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({ interviewer_name: "", scheduled_date: "", interview_type: "video" as string, location_or_link: "", notes: "" });
+
+  const { data: interviews = [] } = useQuery({
+    queryKey: ["interviews", candidateId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("interviews").select("*").eq("candidate_id", candidateId).order("scheduled_date", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !isDemoMode,
+  });
+
+  const createInterview = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("interviews").insert({ candidate_id: candidateId, ...form } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["interviews", candidateId] });
+      toast({ title: "Interview added" });
+      setOpen(false);
+      setForm({ interviewer_name: "", scheduled_date: "", interview_type: "video", location_or_link: "", notes: "" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  return (
+    <div className="bg-card rounded-xl border border-border/50 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Interview Tracker</h2>
+        {!isDemoMode && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2 gold-glow-hover"><Plus className="w-4 h-4" />Add Interview</Button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border-border/50 max-w-lg">
+              <DialogHeader><DialogTitle>Schedule Interview</DialogTitle></DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); createInterview.mutate(); }} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div><Label className="text-xs uppercase tracking-wider text-muted-foreground">Interviewer *</Label><Input value={form.interviewer_name} onChange={(e) => setForm(f => ({ ...f, interviewer_name: e.target.value }))} required className="mt-1 bg-muted/50" /></div>
+                  <div><Label className="text-xs uppercase tracking-wider text-muted-foreground">Date & Time *</Label><Input type="datetime-local" value={form.scheduled_date} onChange={(e) => setForm(f => ({ ...f, scheduled_date: e.target.value }))} required className="mt-1 bg-muted/50" /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><Label className="text-xs uppercase tracking-wider text-muted-foreground">Type</Label>
+                    <Select value={form.interview_type} onValueChange={(v) => setForm(f => ({ ...f, interview_type: v }))}>
+                      <SelectTrigger className="mt-1 bg-muted/50"><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="phone">Phone</SelectItem><SelectItem value="video">Video</SelectItem><SelectItem value="in_person">In Person</SelectItem></SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-xs uppercase tracking-wider text-muted-foreground">Location / Link</Label><Input value={form.location_or_link} onChange={(e) => setForm(f => ({ ...f, location_or_link: e.target.value }))} className="mt-1 bg-muted/50" /></div>
+                </div>
+                <div><Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes</Label><Textarea value={form.notes} onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))} className="mt-1 bg-muted/50" /></div>
+                <div className="flex justify-end gap-3"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" className="gold-glow-hover" disabled={createInterview.isPending}>{createInterview.isPending ? "Adding..." : "Add Interview"}</Button></div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+      {!isDemoMode && interviews.length > 0 ? (
+        <div className="space-y-3">
+          {interviews.map((iv: any) => (
+            <div key={iv.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+              <div>
+                <p className="text-sm font-medium">Round {iv.round_number} — {iv.interviewer_name}</p>
+                <p className="text-xs text-muted-foreground">{new Date(iv.scheduled_date).toLocaleString()} · {iv.interview_type}</p>
+              </div>
+              <Badge variant="secondary" className="capitalize text-[10px]">{iv.status}</Badge>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12">
+          <span className="text-4xl mb-3">📅</span>
+          <p className="text-sm text-muted-foreground text-center max-w-md">Schedule and track interview rounds, outcomes, and notes.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ===================== OFFER SECTION ===================== */
+function OfferSection({ candidateId, isDemoMode }: { candidateId: string; isDemoMode: boolean }) {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({ job_title: "", salary: "", start_date: "", contract_type: "full_time", department: "" });
+
+  const { data: offers = [] } = useQuery({
+    queryKey: ["offers", candidateId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("offers").select("*").eq("candidate_id", candidateId).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !isDemoMode,
+  });
+
+  const createOffer = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("offers").insert({
+        candidate_id: candidateId, job_title: form.job_title,
+        salary: form.salary ? Number(form.salary) : null,
+        start_date: form.start_date || null, contract_type: form.contract_type, department: form.department || null,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["offers", candidateId] });
+      toast({ title: "Offer created" });
+      setOpen(false);
+      setForm({ job_title: "", salary: "", start_date: "", contract_type: "full_time", department: "" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  return (
+    <div className="bg-card rounded-xl border border-border/50 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Offer Management</h2>
+        {!isDemoMode && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2 gold-glow-hover"><Plus className="w-4 h-4" />Create Offer</Button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border-border/50 max-w-lg">
+              <DialogHeader><DialogTitle>Create Offer</DialogTitle></DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); createOffer.mutate(); }} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div><Label className="text-xs uppercase tracking-wider text-muted-foreground">Job Title *</Label><Input value={form.job_title} onChange={(e) => setForm(f => ({ ...f, job_title: e.target.value }))} required className="mt-1 bg-muted/50" /></div>
+                  <div><Label className="text-xs uppercase tracking-wider text-muted-foreground">Salary</Label><Input type="number" value={form.salary} onChange={(e) => setForm(f => ({ ...f, salary: e.target.value }))} className="mt-1 bg-muted/50" /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><Label className="text-xs uppercase tracking-wider text-muted-foreground">Start Date</Label><Input type="date" value={form.start_date} onChange={(e) => setForm(f => ({ ...f, start_date: e.target.value }))} className="mt-1 bg-muted/50" /></div>
+                  <div><Label className="text-xs uppercase tracking-wider text-muted-foreground">Contract Type</Label>
+                    <Select value={form.contract_type} onValueChange={(v) => setForm(f => ({ ...f, contract_type: v }))}>
+                      <SelectTrigger className="mt-1 bg-muted/50"><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="full_time">Full Time</SelectItem><SelectItem value="part_time">Part Time</SelectItem><SelectItem value="contract">Contract</SelectItem><SelectItem value="seasonal">Seasonal</SelectItem></SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div><Label className="text-xs uppercase tracking-wider text-muted-foreground">Department</Label><Input value={form.department} onChange={(e) => setForm(f => ({ ...f, department: e.target.value }))} className="mt-1 bg-muted/50" /></div>
+                <div className="flex justify-end gap-3"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" className="gold-glow-hover" disabled={createOffer.isPending}>{createOffer.isPending ? "Creating..." : "Create Offer"}</Button></div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+      {!isDemoMode && offers.length > 0 ? (
+        <div className="space-y-3">
+          {offers.map((offer: any) => (
+            <div key={offer.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+              <div>
+                <p className="text-sm font-medium">{offer.job_title}</p>
+                <p className="text-xs text-muted-foreground">{offer.salary ? `$${Number(offer.salary).toLocaleString()}` : "No salary"} · {offer.contract_type?.replace("_", " ")}</p>
+              </div>
+              <Badge variant="secondary" className="capitalize text-[10px]">{offer.status}</Badge>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12">
+          <span className="text-4xl mb-3">✍️</span>
+          <p className="text-sm text-muted-foreground text-center max-w-md">Create offers, track negotiations, and collect e-signatures.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ===================== LOGISTICS SECTION ===================== */
+function LogisticsSection({ candidateId, isDemoMode }: { candidateId: string; isDemoMode: boolean }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [newItem, setNewItem] = useState("");
+
+  const { data: dbItems = [] } = useQuery({
+    queryKey: ["logistics", candidateId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("logistics_checklist").select("*").eq("candidate_id", candidateId).order("order_position");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !isDemoMode,
+  });
+
+  const mockItems = [
+    { id: "m1", item_name: "Visa Status", status: "in_progress", is_enabled: true },
+    { id: "m2", item_name: "Police Check", status: "complete", is_enabled: true },
+    { id: "m3", item_name: "Flight Booking", status: "pending", is_enabled: true },
+    { id: "m4", item_name: "Housing Secured", status: "pending", is_enabled: true },
+    { id: "m5", item_name: "Academy Training", status: "pending", is_enabled: false },
+    { id: "m6", item_name: "Pre-Arrival Call", status: "pending", is_enabled: true },
   ];
-  const completed = items.filter((i) => i.status === "complete" && i.enabled).length;
-  const total = items.filter((i) => i.enabled).length;
-  const pct = Math.round((completed / total) * 100);
+
+  const items = isDemoMode ? mockItems : dbItems;
+
+  const addItem = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("logistics_checklist").insert({ candidate_id: candidateId, item_name: newItem, order_position: items.length } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["logistics", candidateId] });
+      setNewItem("");
+      toast({ title: "Item added" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const toggleItem = useMutation({
+    mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: string }) => {
+      const newStatus = currentStatus === "complete" ? "pending" : "complete";
+      const { error } = await supabase.from("logistics_checklist").update({ status: newStatus, completed_at: newStatus === "complete" ? new Date().toISOString() : null } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["logistics", candidateId] }),
+  });
+
+  const removeItem = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("logistics_checklist").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["logistics", candidateId] });
+      toast({ title: "Item removed" });
+    },
+  });
+
+  const enabledItems = items.filter((i: any) => i.is_enabled);
+  const completed = enabledItems.filter((i: any) => i.status === "complete").length;
+  const total = enabledItems.length;
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
     <div className="bg-card rounded-xl border border-border/50 p-6">
@@ -366,35 +665,137 @@ function LogisticsSection() {
           <span className="font-semibold text-primary">{pct}%</span>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${pct}%` }}
-            transition={{ duration: 0.8 }}
-            className="h-full bg-primary rounded-full"
-          />
+          <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8 }} className="h-full bg-primary rounded-full" />
         </div>
       </div>
       <div className="space-y-3">
-        {items.map((item) => (
-          <div key={item.name} className={`flex items-center justify-between p-3 rounded-lg ${item.enabled ? "bg-muted/30" : "bg-muted/10 opacity-50"}`}>
+        {items.map((item: any) => (
+          <div key={item.id} className={`flex items-center justify-between p-3 rounded-lg ${item.is_enabled ? "bg-muted/30" : "bg-muted/10 opacity-50"}`}>
             <div className="flex items-center gap-3">
-              <div className={`w-2.5 h-2.5 rounded-full ${
-                item.status === "complete" ? "bg-success" : item.status === "in_progress" ? "bg-primary" : "bg-muted-foreground/30"
-              }`} />
-              <span className="text-sm font-medium">{item.name}</span>
+              {!isDemoMode ? (
+                <Checkbox checked={item.status === "complete"} onCheckedChange={() => toggleItem.mutate({ id: item.id, currentStatus: item.status })} />
+              ) : (
+                <div className={`w-2.5 h-2.5 rounded-full ${item.status === "complete" ? "bg-success" : item.status === "in_progress" ? "bg-primary" : "bg-muted-foreground/30"}`} />
+              )}
+              <span className="text-sm font-medium">{item.item_name}</span>
             </div>
-            <Badge variant="secondary" className="capitalize text-[10px]">{item.status.replace("_", " ")}</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="capitalize text-[10px]">{item.status?.replace("_", " ")}</Badge>
+              {!isDemoMode && (
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive" onClick={() => removeItem.mutate(item.id)}><X className="w-3.5 h-3.5" /></Button>
+              )}
+            </div>
           </div>
         ))}
       </div>
+      {!isDemoMode && (
+        <div className="flex gap-2 mt-4">
+          <Input placeholder="New checklist item..." value={newItem} onChange={(e) => setNewItem(e.target.value)} className="bg-muted/50"
+            onKeyDown={(e) => { if (e.key === "Enter" && newItem.trim()) { e.preventDefault(); addItem.mutate(); } }} />
+          <Button size="sm" variant="outline" disabled={!newItem.trim() || addItem.isPending} onClick={() => addItem.mutate()}>
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
 
-function EngagementSection({ candidate }: { candidate: typeof mockCandidates[0] }) {
+/* ===================== NOTES SECTION ===================== */
+function NotesSection({ candidateId, isDemoMode }: { candidateId: string; isDemoMode: boolean }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [noteText, setNoteText] = useState("");
+  const [category, setCategory] = useState("general");
+
+  const { data: notes = [] } = useQuery({
+    queryKey: ["notes", candidateId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("notes").select("*").eq("candidate_id", candidateId).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !isDemoMode,
+  });
+
+  const createNote = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("notes").insert({ candidate_id: candidateId, note_text: noteText, category, author: "Current User" } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes", candidateId] });
+      toast({ title: "Note added" });
+      setNoteText("");
+      setCategory("general");
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const categoryColors: Record<string, string> = {
+    follow_up: "bg-primary/20 text-primary",
+    concern: "bg-destructive/20 text-destructive",
+    celebration: "bg-success/20 text-success",
+    general: "bg-muted text-muted-foreground",
+    legal: "bg-warning/20 text-warning",
+    hr: "bg-accent text-accent-foreground",
+  };
+
+  const mockNotes = [
+    { id: "n1", note_text: "Candidate confirmed availability for Q2 start date.", category: "follow_up", author: "Demo User", created_at: "2026-02-10T10:00:00Z" },
+    { id: "n2", note_text: "Excellent references from previous employer.", category: "celebration", author: "Demo User", created_at: "2026-02-08T14:30:00Z" },
+    { id: "n3", note_text: "Needs visa sponsorship — check requirements.", category: "concern", author: "Demo User", created_at: "2026-02-05T09:15:00Z" },
+  ];
+
+  const displayNotes = isDemoMode ? mockNotes : notes;
+
+  return (
+    <div className="bg-card rounded-xl border border-border/50 p-6">
+      <h2 className="text-lg font-semibold mb-4">Notes & Timeline</h2>
+      {!isDemoMode && (
+        <div className="mb-6 p-4 rounded-lg bg-muted/30 space-y-3">
+          <Textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Add a note..." className="bg-background" />
+          <div className="flex items-center gap-3">
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="w-40 bg-background"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">General</SelectItem>
+                <SelectItem value="follow_up">Follow-up</SelectItem>
+                <SelectItem value="concern">Concern</SelectItem>
+                <SelectItem value="celebration">Celebration</SelectItem>
+                <SelectItem value="legal">Legal</SelectItem>
+                <SelectItem value="hr">HR</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button size="sm" className="gold-glow-hover" disabled={!noteText.trim() || createNote.isPending} onClick={() => createNote.mutate()}>
+              {createNote.isPending ? "Adding..." : "Add Note"}
+            </Button>
+          </div>
+        </div>
+      )}
+      {displayNotes.length > 0 ? (
+        <div className="space-y-3">
+          {displayNotes.map((note: any) => (
+            <motion.div key={note.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-lg bg-muted/30">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge className={`capitalize text-[10px] border-0 ${categoryColors[note.category] ?? categoryColors.general}`}>{note.category?.replace("_", " ")}</Badge>
+                <span className="text-xs text-muted-foreground">{note.author} · {new Date(note.created_at).toLocaleDateString()}</span>
+              </div>
+              <p className="text-sm">{note.note_text}</p>
+            </motion.div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground text-center py-8">No notes yet.</p>
+      )}
+    </div>
+  );
+}
+
+/* ===================== ENGAGEMENT ===================== */
+function EngagementSection({ candidate }: { candidate: Candidate }) {
   const score = candidate.engagement_score;
   const color = score >= 80 ? "text-success" : score >= 50 ? "text-warning" : "text-destructive";
-
   const timeline = [
     { type: "email_sent", date: "Feb 10", label: "Check-in email sent" },
     { type: "email_opened", date: "Feb 10", label: "Email opened" },
@@ -412,43 +813,23 @@ function EngagementSection({ candidate }: { candidate: typeof mockCandidates[0] 
           <div className="relative w-28 h-28">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
               <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
-              <motion.path
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
+              <motion.path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
                 stroke={score >= 80 ? "hsl(var(--success))" : score >= 50 ? "hsl(var(--primary))" : "hsl(var(--destructive))"}
-                strokeWidth="3"
-                strokeLinecap="round"
-                initial={{ strokeDasharray: "0, 100" }}
-                animate={{ strokeDasharray: `${score}, 100` }}
-                transition={{ duration: 1.2 }}
-              />
+                strokeWidth="3" strokeLinecap="round" initial={{ strokeDasharray: "0, 100" }} animate={{ strokeDasharray: `${score}, 100` }} transition={{ duration: 1.2 }} />
             </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className={`text-2xl font-bold ${color}`}>{score}</span>
-            </div>
+            <div className="absolute inset-0 flex items-center justify-center"><span className={`text-2xl font-bold ${color}`}>{score}</span></div>
           </div>
           <div>
-            <p className={`text-sm font-semibold ${color}`}>
-              {score >= 80 ? "Highly Engaged" : score >= 50 ? "Moderate — Attention Needed" : "At Risk — Immediate Action"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Last contact: {candidate.last_contact_date}
-            </p>
+            <p className={`text-sm font-semibold ${color}`}>{score >= 80 ? "Highly Engaged" : score >= 50 ? "Moderate — Attention Needed" : "At Risk — Immediate Action"}</p>
+            <p className="text-xs text-muted-foreground mt-1">Last contact: {candidate.last_contact_date}</p>
           </div>
         </div>
       </div>
-
       <div className="bg-card rounded-xl border border-border/50 p-6">
         <h2 className="text-lg font-semibold mb-4">Activity Timeline</h2>
         <div className="space-y-4">
           {timeline.map((event, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="flex items-start gap-3"
-            >
+            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
                 {event.type.includes("email") ? <Mail className="w-3.5 h-3.5 text-muted-foreground" /> :
                  event.type.includes("interview") ? <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" /> :
@@ -466,6 +847,7 @@ function EngagementSection({ candidate }: { candidate: typeof mockCandidates[0] 
   );
 }
 
+/* ===================== PLACEHOLDER ===================== */
 function PlaceholderSection({ title, emoji, description, isPlaceholder = false }: { title: string; emoji: string; description: string; isPlaceholder?: boolean }) {
   return (
     <div className="bg-card rounded-xl border border-border/50 p-6">
@@ -473,9 +855,7 @@ function PlaceholderSection({ title, emoji, description, isPlaceholder = false }
       <div className={`flex flex-col items-center justify-center py-12 ${isPlaceholder ? "opacity-60" : ""}`}>
         <span className="text-4xl mb-3">{emoji}</span>
         <p className="text-sm text-muted-foreground text-center max-w-md">{description}</p>
-        {isPlaceholder && (
-          <Badge variant="secondary" className="mt-3">Coming Soon</Badge>
-        )}
+        {isPlaceholder && <Badge variant="secondary" className="mt-3">Coming Soon</Badge>}
       </div>
     </div>
   );

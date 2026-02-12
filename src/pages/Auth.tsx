@@ -60,9 +60,9 @@ export default function Auth() {
       >
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-foreground font-bold text-xl">S</span>
+            <span className="text-primary-foreground font-bold text-xl">B</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Shadow OS</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Be Connect</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isLogin ? "Sign in to your account" : "Create your account"}
           </p>

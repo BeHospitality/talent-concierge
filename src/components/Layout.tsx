@@ -59,9 +59,9 @@ export default function Layout({ children, onSearch }: LayoutProps) {
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">S</span>
+              <span className="text-primary-foreground font-bold text-sm">B</span>
               </div>
-              <span className="font-bold text-lg tracking-tight">Shadow OS</span>
+              <span className="font-bold text-lg tracking-tight">Be Connect</span>
             </Link>
             <nav className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
