@@ -1,15 +1,20 @@
-import { useParams, Link } from "react-router-dom";
-import { mockCandidates, STAGE_LABELS } from "@/data/mockData";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { mockCandidates, STAGE_LABELS, type Candidate } from "@/data/mockData";
 import { useDemoMode } from "@/contexts/DemoModeContext";
+import { useCandidates, type DbCandidate } from "@/hooks/useCandidates";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, User, ClipboardCheck, FileText, CalendarDays,
   FileSignature, CheckSquare, Users, Activity, GraduationCap,
-  Home, StickyNote, MapPin, Phone, Mail, ExternalLink
+  Home, StickyNote, MapPin, Phone, Mail, ExternalLink, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 
 const sidebarItems = [
   { id: "personal", label: "Personal Info", icon: User },
@@ -25,12 +30,36 @@ const sidebarItems = [
   { id: "notes", label: "Notes", icon: StickyNote },
 ];
 
+function dbToCandidate(db: DbCandidate): Candidate {
+  return {
+    id: db.id,
+    full_name: db.full_name,
+    email: db.email,
+    phone: db.phone ?? "",
+    photo_url: db.photo_url ?? `https://api.dicebear.com/7.x/personas/svg?seed=${db.id}`,
+    current_stage: db.current_stage as any,
+    days_in_stage: db.days_in_stage,
+    risk_level: db.risk_level as any,
+    engagement_score: db.engagement_score,
+    last_contact_date: db.last_contact_date ?? "",
+    referral_source: db.referral_source ?? "",
+    current_location: db.current_location ?? "",
+    desired_location: db.desired_location ?? "",
+    organization_id: db.organization_id ?? "",
+    prescreening_complete: db.prescreening_complete,
+  };
+}
+
 export default function CandidateProfile() {
   const { id } = useParams();
   const { isDemoMode } = useDemoMode();
+  const { candidates: dbCandidates, deleteCandidate } = useCandidates();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("personal");
 
-  const candidate = isDemoMode ? mockCandidates.find((c) => c.id === id) : undefined;
+  const candidate = isDemoMode
+    ? mockCandidates.find((c) => c.id === id)
+    : dbCandidates.map(dbToCandidate).find((c) => c.id === id);
 
   if (!candidate) {
     return (
@@ -151,7 +180,7 @@ export default function CandidateProfile() {
           </div>
 
           {/* Sections */}
-          {activeSection === "personal" && <PersonalInfo candidate={candidate} />}
+          {activeSection === "personal" && <PersonalInfo candidate={candidate} isDemoMode={isDemoMode} onDelete={!isDemoMode ? async () => { await deleteCandidate(candidate.id); navigate("/"); } : undefined} />}
           {activeSection === "prescreening" && <PreScreening candidate={candidate} />}
           {activeSection === "dossier" && <PlaceholderSection title="Dossier & Submission" emoji="📄" description="Generate and track PIN-protected dossiers for hiring managers." />}
           {activeSection === "interviews" && <PlaceholderSection title="Interview Tracker" emoji="📅" description="Schedule and track interview rounds, outcomes, and notes." />}
@@ -168,7 +197,7 @@ export default function CandidateProfile() {
   );
 }
 
-function PersonalInfo({ candidate }: { candidate: typeof mockCandidates[0] }) {
+function PersonalInfo({ candidate, onDelete, isDemoMode }: { candidate: Candidate; onDelete?: () => void; isDemoMode: boolean }) {
   return (
     <div className="bg-card rounded-xl border border-border/50 p-6">
       <h2 className="text-lg font-semibold mb-4">Personal Information</h2>
@@ -187,10 +216,28 @@ function PersonalInfo({ candidate }: { candidate: typeof mockCandidates[0] }) {
           </div>
         ))}
       </div>
-      <div className="flex gap-3 mt-6 pt-6 border-t border-border/50">
-        <Button size="sm" className="gold-glow-hover">Save Changes</Button>
-        <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10">Delete Candidate</Button>
-      </div>
+      {!isDemoMode && (
+        <div className="flex gap-3 mt-6 pt-6 border-t border-border/50">
+          <Button size="sm" className="gold-glow-hover">Save Changes</Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10 gap-2">
+                <Trash2 className="w-3.5 h-3.5" />Delete Candidate
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="bg-card border-border/50">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {candidate.full_name}?</AlertDialogTitle>
+                <AlertDialogDescription>This action cannot be undone. All data for this candidate will be permanently removed.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
     </div>
   );
 }

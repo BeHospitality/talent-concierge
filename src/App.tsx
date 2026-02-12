@@ -2,14 +2,53 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DemoModeProvider } from "@/contexts/DemoModeContext";
+import { useAuth } from "@/hooks/useAuth";
 import Layout from "@/components/Layout";
 import Index from "./pages/Index";
 import CandidateProfile from "./pages/CandidateProfile";
+import Organizations from "./pages/Organizations";
+import Settings from "./pages/Settings";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+function ProtectedRoutes() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-radial flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center animate-pulse">
+          <span className="text-primary-foreground font-bold text-sm">S</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/auth" replace />;
+
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/candidate/:id" element={<CandidateProfile />} />
+        <Route path="/organizations" element={<Organizations />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Layout>
+  );
+}
+
+function AuthRoute() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) return <Navigate to="/" replace />;
+  return <Auth />;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -18,13 +57,10 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/candidate/:id" element={<CandidateProfile />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Layout>
+          <Routes>
+            <Route path="/auth" element={<AuthRoute />} />
+            <Route path="/*" element={<ProtectedRoutes />} />
+          </Routes>
         </BrowserRouter>
       </DemoModeProvider>
     </TooltipProvider>
