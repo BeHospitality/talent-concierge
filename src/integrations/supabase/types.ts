@@ -83,6 +83,7 @@ export type Database = {
           resume_url: string | null
           risk_level: Database["public"]["Enums"]["risk_level"]
           updated_at: string
+          video_clips: Json | null
         }
         Insert: {
           created_at?: string
@@ -104,6 +105,7 @@ export type Database = {
           resume_url?: string | null
           risk_level?: Database["public"]["Enums"]["risk_level"]
           updated_at?: string
+          video_clips?: Json | null
         }
         Update: {
           created_at?: string
@@ -125,6 +127,7 @@ export type Database = {
           resume_url?: string | null
           risk_level?: Database["public"]["Enums"]["risk_level"]
           updated_at?: string
+          video_clips?: Json | null
         }
         Relationships: [
           {
