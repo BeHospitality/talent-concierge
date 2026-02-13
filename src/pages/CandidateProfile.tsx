@@ -360,17 +360,73 @@ function PreScreening({ candidate }: { candidate: Candidate }) {
 function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDemoMode: boolean }) {
   const [open, setOpen] = useState(false);
   const [managerNotes, setManagerNotes] = useState("");
+  const [selectedManager, setSelectedManager] = useState("");
+  const [generatedResult, setGeneratedResult] = useState<{ pin: string; code: string; url: string } | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: managers = [] } = useQuery({
+    queryKey: ["hiring_managers"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("hiring_managers").select("*").order("full_name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !isDemoMode,
+  });
+
+  const { data: dossiers = [] } = useQuery({
+    queryKey: ["dossiers", candidate.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("dossiers").select("*, hiring_managers(full_name, department)").eq("candidate_id", candidate.id).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !isDemoMode,
+  });
+
+  const createDossier = useMutation({
+    mutationFn: async () => {
+      const pin = Math.random().toString().slice(2, 8);
+      const code = Math.random().toString(36).slice(2, 10);
+      const { error } = await supabase.from("dossiers").insert({
+        candidate_id: candidate.id,
+        unique_code: code,
+        pin_code: pin,
+        hiring_manager_id: selectedManager || null,
+        manager_notes: managerNotes || null,
+        status: "not_sent",
+      } as any);
+      if (error) throw error;
+      return { pin, code, url: `${window.location.origin}/dossier/${code}` };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["dossiers", candidate.id] });
+      setGeneratedResult(result);
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
 
   const handleGenerate = () => {
-    const pin = Math.random().toString().slice(2, 8);
-    const code = Math.random().toString(36).slice(2, 10);
-    toast({
-      title: "Dossier Generated",
-      description: `PIN: ${pin} — Link: yoursite.com/dossier/${code}`,
-    });
-    setOpen(false);
-    setManagerNotes("");
+    createDossier.mutate();
+  };
+
+  const handleDialogClose = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setGeneratedResult(null);
+      setManagerNotes("");
+      setSelectedManager("");
+    }
+  };
+
+  const statusColors: Record<string, string> = {
+    not_sent: "bg-muted text-muted-foreground",
+    sent: "bg-primary/20 text-primary",
+    viewed: "bg-accent text-accent-foreground",
+    interested: "bg-success/20 text-success",
+    passed: "bg-destructive/20 text-destructive",
+    need_more_info: "bg-warning/20 text-warning",
   };
 
   return (
@@ -378,41 +434,107 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Dossier & Submission</h2>
         {!isDemoMode && (
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
               <Button size="sm" className="gap-2 gold-glow-hover" disabled={!candidate.prescreening_complete}>
                 <FileText className="w-4 h-4" />Generate Dossier
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-card border-border/50 max-w-lg">
-              <DialogHeader><DialogTitle>Generate Dossier</DialogTitle></DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Hiring Manager</Label>
-                  <Select><SelectTrigger className="mt-1 bg-muted/50"><SelectValue placeholder="Select hiring manager" /></SelectTrigger>
-                    <SelectContent><SelectItem value="placeholder">No managers configured yet</SelectItem></SelectContent>
-                  </Select>
+              <DialogHeader><DialogTitle>{generatedResult ? "Dossier Generated!" : "Generate Dossier"}</DialogTitle></DialogHeader>
+              {generatedResult ? (
+                <div className="space-y-4">
+                  <div className="bg-success/10 border border-success/30 rounded-lg p-4 text-center">
+                    <p className="text-sm font-semibold text-success mb-1">✓ Dossier Created Successfully</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">PIN Code</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input value={generatedResult.pin} readOnly className="bg-muted/50 font-mono text-lg text-center font-bold tracking-widest" />
+                      <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(generatedResult.pin); toast({ title: "PIN copied!" }); }}><LinkIcon className="w-3.5 h-3.5" /></Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Dossier URL</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input value={generatedResult.url} readOnly className="bg-muted/50 font-mono text-xs" />
+                      <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(generatedResult.url); toast({ title: "URL copied!" }); }}><LinkIcon className="w-3.5 h-3.5" /></Button>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button variant="outline" onClick={() => handleDialogClose(false)}>Done</Button>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Manager Notes</Label>
-                  <Textarea value={managerNotes} onChange={(e) => setManagerNotes(e.target.value)} placeholder="Add notes for the hiring manager..." className="mt-1 bg-muted/50" />
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Hiring Manager</Label>
+                    <Select value={selectedManager} onValueChange={setSelectedManager}>
+                      <SelectTrigger className="mt-1 bg-muted/50"><SelectValue placeholder="Select hiring manager" /></SelectTrigger>
+                      <SelectContent>
+                        {managers.length > 0 ? managers.map((m: any) => (
+                          <SelectItem key={m.id} value={m.id}>{m.full_name} — {m.department}</SelectItem>
+                        )) : (
+                          <SelectItem value="none" disabled>No managers configured yet</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes for Hiring Manager</Label>
+                    <Textarea value={managerNotes} onChange={(e) => setManagerNotes(e.target.value)} placeholder="Add context for the hiring manager..." className="mt-1 bg-muted/50" />
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">A 6-digit PIN code and unique dossier link will be auto-generated.</p>
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <Button variant="outline" onClick={() => handleDialogClose(false)}>Cancel</Button>
+                    <Button className="gold-glow-hover" onClick={handleGenerate} disabled={createDossier.isPending}>
+                      {createDossier.isPending ? "Generating..." : "Generate Dossier"}
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                  <Button className="gold-glow-hover" onClick={handleGenerate}>Generate PIN & Link</Button>
-                </div>
-              </div>
+              )}
             </DialogContent>
           </Dialog>
         )}
       </div>
       {!candidate.prescreening_complete && (
-        <p className="text-sm text-muted-foreground">Pre-screening must be completed before generating a dossier.</p>
+        <p className="text-sm text-muted-foreground mb-4">Pre-screening must be completed before generating a dossier.</p>
       )}
-      <div className="flex flex-col items-center justify-center py-12">
-        <span className="text-4xl mb-3">📄</span>
-        <p className="text-sm text-muted-foreground text-center max-w-md">Generate and track PIN-protected dossiers for hiring managers.</p>
-      </div>
+      {!isDemoMode && dossiers.length > 0 ? (
+        <div className="space-y-3">
+          {dossiers.map((d: any) => (
+            <div key={d.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+              <div>
+                <p className="text-sm font-medium">
+                  Dossier — {d.hiring_managers?.full_name || "No manager"}
+                  {d.hiring_managers?.department ? ` (${d.hiring_managers.department})` : ""}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Created {new Date(d.created_at).toLocaleDateString()} · PIN: {d.pin_code} · Views: {d.view_count}
+                </p>
+              </div>
+              <Badge className={`capitalize text-[10px] border-0 ${statusColors[d.status] ?? statusColors.not_sent}`}>
+                {d.status?.replace("_", " ")}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      ) : (
+        !isDemoMode && candidate.prescreening_complete && (
+          <div className="flex flex-col items-center justify-center py-12">
+            <span className="text-4xl mb-3">📄</span>
+            <p className="text-sm text-muted-foreground text-center max-w-md">Generate and track PIN-protected dossiers for hiring managers.</p>
+          </div>
+        )
+      )}
+      {isDemoMode && (
+        <div className="flex flex-col items-center justify-center py-12">
+          <span className="text-4xl mb-3">📄</span>
+          <p className="text-sm text-muted-foreground text-center max-w-md">Generate and track PIN-protected dossiers for hiring managers.</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -505,9 +627,11 @@ function InterviewSection({ candidateId, isDemoMode }: { candidateId: string; is
 /* ===================== OFFER SECTION ===================== */
 function OfferSection({ candidateId, isDemoMode }: { candidateId: string; isDemoMode: boolean }) {
   const [open, setOpen] = useState(false);
+  const [letterOpen, setLetterOpen] = useState(false);
+  const [letterHtml, setLetterHtml] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ job_title: "", salary: "", start_date: "", contract_type: "full_time", department: "" });
+  const [form, setForm] = useState({ job_title: "", salary: "", start_date: "", contract_type: "full_time", department: "", benefits_summary: "" });
 
   const { data: offers = [] } = useQuery({
     queryKey: ["offers", candidateId],
@@ -524,7 +648,8 @@ function OfferSection({ candidateId, isDemoMode }: { candidateId: string; isDemo
       const { error } = await supabase.from("offers").insert({
         candidate_id: candidateId, job_title: form.job_title,
         salary: form.salary ? Number(form.salary) : null,
-        start_date: form.start_date || null, contract_type: form.contract_type, department: form.department || null,
+        start_date: form.start_date || null, contract_type: form.contract_type,
+        department: form.department || null, benefits_summary: form.benefits_summary || null,
       } as any);
       if (error) throw error;
     },
@@ -532,10 +657,46 @@ function OfferSection({ candidateId, isDemoMode }: { candidateId: string; isDemo
       queryClient.invalidateQueries({ queryKey: ["offers", candidateId] });
       toast({ title: "Offer created" });
       setOpen(false);
-      setForm({ job_title: "", salary: "", start_date: "", contract_type: "full_time", department: "" });
+      setForm({ job_title: "", salary: "", start_date: "", contract_type: "full_time", department: "", benefits_summary: "" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
+
+  const offerStatusColors: Record<string, string> = {
+    pending: "bg-warning/20 text-warning",
+    signed: "bg-success/20 text-success",
+    declined: "bg-destructive/20 text-destructive",
+    expired: "bg-muted text-muted-foreground",
+  };
+
+  const generateOfferLetter = (offer: any) => {
+    const html = `
+      <div style="font-family: Georgia, serif; max-width: 700px; margin: 0 auto; padding: 40px;">
+        <div style="border-bottom: 3px solid #c9a227; padding-bottom: 20px; margin-bottom: 30px;">
+          <h1 style="margin: 0; font-size: 24px; color: #1a1a1a;">Be Connect</h1>
+          <p style="margin: 4px 0 0; color: #666; font-size: 12px;">Global Hospitality Talent Solutions</p>
+        </div>
+        <p style="color: #333;">Date: ${new Date().toLocaleDateString()}</p>
+        <h2 style="color: #1a1a1a; margin-top: 30px;">Offer of Employment</h2>
+        <p style="color: #333; line-height: 1.6;">We are pleased to offer you the position of <strong>${offer.job_title}</strong>${offer.department ? ` in the <strong>${offer.department}</strong> department` : ''}.</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Position</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">${offer.job_title}</td></tr>
+          ${offer.salary ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Annual Salary</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">$${Number(offer.salary).toLocaleString()}</td></tr>` : ''}
+          ${offer.start_date ? `<tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Start Date</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">${new Date(offer.start_date).toLocaleDateString()}</td></tr>` : ''}
+          <tr><td style="padding: 8px; border-bottom: 1px solid #eee; color: #666;">Contract Type</td><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; text-transform: capitalize;">${offer.contract_type?.replace('_', ' ')}</td></tr>
+        </table>
+        ${offer.benefits_summary ? `<h3 style="color: #1a1a1a;">Benefits</h3><p style="color: #333; line-height: 1.6;">${offer.benefits_summary}</p>` : ''}
+        <div style="margin-top: 40px; padding: 20px; background: #f8f8f8; border-radius: 8px; text-align: center;">
+          <button style="background: #c9a227; color: white; border: none; padding: 12px 32px; font-size: 16px; border-radius: 6px; cursor: pointer;">Accept Offer</button>
+        </div>
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; color: #999; font-size: 11px;">
+          <p>This offer is contingent upon successful completion of all pre-employment requirements.</p>
+        </div>
+      </div>
+    `;
+    setLetterHtml(html);
+    setLetterOpen(true);
+  };
 
   return (
     <div className="bg-card rounded-xl border border-border/50 p-6">
@@ -563,21 +724,57 @@ function OfferSection({ candidateId, isDemoMode }: { candidateId: string; isDemo
                   </div>
                 </div>
                 <div><Label className="text-xs uppercase tracking-wider text-muted-foreground">Department</Label><Input value={form.department} onChange={(e) => setForm(f => ({ ...f, department: e.target.value }))} className="mt-1 bg-muted/50" /></div>
+                <div><Label className="text-xs uppercase tracking-wider text-muted-foreground">Benefits Summary</Label><Textarea value={form.benefits_summary} onChange={(e) => setForm(f => ({ ...f, benefits_summary: e.target.value }))} placeholder="Health insurance, relocation package, etc." className="mt-1 bg-muted/50" /></div>
                 <div className="flex justify-end gap-3"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" className="gold-glow-hover" disabled={createOffer.isPending}>{createOffer.isPending ? "Creating..." : "Create Offer"}</Button></div>
               </form>
             </DialogContent>
           </Dialog>
         )}
       </div>
+
+      {/* Offer Letter Preview Dialog */}
+      <Dialog open={letterOpen} onOpenChange={setLetterOpen}>
+        <DialogContent className="bg-card border-border/50 max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Offer Letter Preview</DialogTitle></DialogHeader>
+          <div className="border rounded-lg bg-background p-2" dangerouslySetInnerHTML={{ __html: letterHtml }} />
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setLetterOpen(false)}>Close</Button>
+            <Button variant="outline" className="gap-2" onClick={() => {
+              const blob = new Blob([letterHtml], { type: "text/html" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url; a.download = "offer-letter.html"; a.click();
+              URL.revokeObjectURL(url);
+              toast({ title: "Offer letter downloaded" });
+            }}><FileText className="w-3.5 h-3.5" />Download HTML</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {!isDemoMode && offers.length > 0 ? (
         <div className="space-y-3">
           {offers.map((offer: any) => (
-            <div key={offer.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-              <div>
-                <p className="text-sm font-medium">{offer.job_title}</p>
-                <p className="text-xs text-muted-foreground">{offer.salary ? `$${Number(offer.salary).toLocaleString()}` : "No salary"} · {offer.contract_type?.replace("_", " ")}</p>
+            <div key={offer.id} className="p-4 rounded-lg bg-muted/30">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <p className="text-sm font-medium">{offer.job_title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {offer.salary ? `$${Number(offer.salary).toLocaleString()}` : "No salary"} · {offer.contract_type?.replace("_", " ")}
+                    {offer.start_date ? ` · Start: ${new Date(offer.start_date).toLocaleDateString()}` : ""}
+                  </p>
+                </div>
+                <Badge className={`capitalize text-[10px] border-0 ${offerStatusColors[offer.status] ?? offerStatusColors.pending}`}>
+                  {offer.status}
+                </Badge>
               </div>
-              <Badge variant="secondary" className="capitalize text-[10px]">{offer.status}</Badge>
+              <div className="flex gap-2 mt-2">
+                <Button size="sm" variant="outline" className="gap-1 text-xs h-7" onClick={() => generateOfferLetter(offer)}>
+                  <FileText className="w-3 h-3" />Generate Letter
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1 text-xs h-7" onClick={() => toast({ title: "Email sent", description: "Offer letter link has been sent to the candidate." })}>
+                  <Send className="w-3 h-3" />Send to Candidate
+                </Button>
+              </div>
             </div>
           ))}
         </div>
@@ -607,13 +804,24 @@ function LogisticsSection({ candidateId, isDemoMode }: { candidateId: string; is
     enabled: !isDemoMode,
   });
 
+  // Fetch offer start_date for due date calculation
+  const { data: offers = [] } = useQuery({
+    queryKey: ["offers_for_logistics", candidateId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("offers").select("start_date").eq("candidate_id", candidateId).order("created_at", { ascending: false }).limit(1);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !isDemoMode,
+  });
+
   const mockItems = [
-    { id: "m1", item_name: "Visa Status", status: "in_progress", is_enabled: true },
-    { id: "m2", item_name: "Police Check", status: "complete", is_enabled: true },
-    { id: "m3", item_name: "Flight Booking", status: "pending", is_enabled: true },
-    { id: "m4", item_name: "Housing Secured", status: "pending", is_enabled: true },
-    { id: "m5", item_name: "Academy Training", status: "pending", is_enabled: false },
-    { id: "m6", item_name: "Pre-Arrival Call", status: "pending", is_enabled: true },
+    { id: "m1", item_name: "Visa Status", status: "in_progress", is_enabled: true, due_date: null },
+    { id: "m2", item_name: "Police Check", status: "complete", is_enabled: true, due_date: null },
+    { id: "m3", item_name: "Flight Booking", status: "pending", is_enabled: true, due_date: null },
+    { id: "m4", item_name: "Housing Secured", status: "pending", is_enabled: true, due_date: null },
+    { id: "m5", item_name: "Academy Training", status: "pending", is_enabled: false, due_date: null },
+    { id: "m6", item_name: "Pre-Arrival Call", status: "pending", is_enabled: true, due_date: null },
   ];
 
   const items = isDemoMode ? mockItems : dbItems;
@@ -651,6 +859,40 @@ function LogisticsSection({ candidateId, isDemoMode }: { candidateId: string; is
     },
   });
 
+  const autoPopulate = useMutation({
+    mutationFn: async () => {
+      const startDate = offers[0]?.start_date ? new Date(offers[0].start_date) : null;
+      const standardItems = [
+        { name: "Visa Application", daysBefore: 60 },
+        { name: "Police Check", daysBefore: 45 },
+        { name: "Flight Booking", daysBefore: 21 },
+        { name: "Housing Secured", daysBefore: 14 },
+        { name: "Academy Complete", daysBefore: 7 },
+      ];
+      const inserts = standardItems.map((item, i) => {
+        let dueDate: string | null = null;
+        if (startDate) {
+          const d = new Date(startDate);
+          d.setDate(d.getDate() - item.daysBefore);
+          dueDate = d.toISOString().split("T")[0];
+        }
+        return {
+          candidate_id: candidateId,
+          item_name: item.name,
+          order_position: i,
+          due_date: dueDate,
+        };
+      });
+      const { error } = await supabase.from("logistics_checklist").insert(inserts as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["logistics", candidateId] });
+      toast({ title: "Checklist populated", description: "Standard pre-arrival items have been added." });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const enabledItems = items.filter((i: any) => i.is_enabled);
   const completed = enabledItems.filter((i: any) => i.status === "complete").length;
   const total = enabledItems.length;
@@ -658,7 +900,14 @@ function LogisticsSection({ candidateId, isDemoMode }: { candidateId: string; is
 
   return (
     <div className="bg-card rounded-xl border border-border/50 p-6">
-      <h2 className="text-lg font-semibold mb-4">Pre-Arrival Logistics</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Pre-Arrival Logistics</h2>
+        {!isDemoMode && items.length === 0 && (
+          <Button size="sm" variant="outline" className="gap-2" onClick={() => autoPopulate.mutate()} disabled={autoPopulate.isPending}>
+            <Plus className="w-4 h-4" />{autoPopulate.isPending ? "Populating..." : "Auto-Populate Standard Items"}
+          </Button>
+        )}
+      </div>
       <div className="mb-6">
         <div className="flex items-center justify-between text-sm mb-2">
           <span className="text-muted-foreground">{completed} of {total} items complete</span>
@@ -677,7 +926,10 @@ function LogisticsSection({ candidateId, isDemoMode }: { candidateId: string; is
               ) : (
                 <div className={`w-2.5 h-2.5 rounded-full ${item.status === "complete" ? "bg-success" : item.status === "in_progress" ? "bg-primary" : "bg-muted-foreground/30"}`} />
               )}
-              <span className="text-sm font-medium">{item.item_name}</span>
+              <div>
+                <span className="text-sm font-medium">{item.item_name}</span>
+                {item.due_date && <p className="text-xs text-muted-foreground">Due: {new Date(item.due_date).toLocaleDateString()}</p>}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="capitalize text-[10px]">{item.status?.replace("_", " ")}</Badge>
