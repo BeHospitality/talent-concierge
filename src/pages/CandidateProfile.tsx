@@ -7,7 +7,7 @@ import {
   ArrowLeft, User, ClipboardCheck, FileText, CalendarDays,
   FileSignature, CheckSquare, Users, Activity, GraduationCap,
   Home, StickyNote, MapPin, Phone, Mail, ExternalLink, Trash2,
-  Edit, Plus, Send, Link as LinkIcon, X
+  Edit, Plus, Send, Link as LinkIcon, X, Video, Upload, Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,7 @@ import {
 
 const sidebarItems = [
   { id: "personal", label: "Personal Info", icon: User },
+  { id: "video", label: "Video Profile", icon: Video },
   { id: "prescreening", label: "Pre-Screening", icon: ClipboardCheck },
   { id: "dossier", label: "Dossier", icon: FileText },
   { id: "interviews", label: "Interviews", icon: CalendarDays },
@@ -166,6 +167,7 @@ export default function CandidateProfile() {
           </div>
 
           {activeSection === "personal" && <PersonalInfo candidate={candidate} isDemoMode={isDemoMode} onDelete={!isDemoMode ? handleDelete : undefined} onUpdate={!isDemoMode ? handleUpdate : undefined} />}
+          {activeSection === "video" && <VideoProfileSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
           {activeSection === "prescreening" && <PreScreening candidate={candidate} />}
           {activeSection === "dossier" && <DossierSection candidate={candidate} isDemoMode={isDemoMode} />}
           {activeSection === "interviews" && <InterviewSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
@@ -244,6 +246,203 @@ function PersonalInfo({ candidate, onDelete, onUpdate, isDemoMode }: { candidate
               </AlertDialogContent>
             </AlertDialog>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ===================== VIDEO PROFILE ===================== */
+interface VideoClip {
+  id: string;
+  title: string;
+  url: string;
+  uploaded_at: string;
+}
+
+function getEmbedUrl(url: string): string | null {
+  // YouTube
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  // Vimeo
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  // Direct video URL
+  if (url.match(/\.(mp4|webm|ogg)(\?|$)/i)) return url;
+  return null;
+}
+
+function VideoProfileSection({ candidateId, isDemoMode }: { candidateId: string; isDemoMode: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: candidateData } = useQuery({
+    queryKey: ["candidate_video", candidateId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("candidates").select("video_clips").eq("id", candidateId).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !isDemoMode,
+  });
+
+  const clips: VideoClip[] = isDemoMode
+    ? [
+        { id: "demo1", title: "Introduction", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", uploaded_at: "2026-02-10T10:00:00Z" },
+        { id: "demo2", title: "Why Hospitality?", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", uploaded_at: "2026-02-09T14:00:00Z" },
+        { id: "demo3", title: "Skills Demo — Plating", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", uploaded_at: "2026-02-08T09:00:00Z" },
+      ]
+    : ((candidateData?.video_clips as unknown as VideoClip[]) || []);
+
+  const saveMutation = useMutation({
+    mutationFn: async (newClips: VideoClip[]) => {
+      const { error } = await supabase.from("candidates").update({ video_clips: newClips as any }).eq("id", candidateId);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["candidate_video", candidateId] }),
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const handleAddClip = () => {
+    if (!title.trim() || !videoUrl.trim()) return;
+    const newClip: VideoClip = {
+      id: crypto.randomUUID(),
+      title: title.trim(),
+      url: videoUrl.trim(),
+      uploaded_at: new Date().toISOString(),
+    };
+    saveMutation.mutate([...clips, newClip]);
+    setTitle("");
+    setVideoUrl("");
+    setOpen(false);
+    toast({ title: "Video clip added" });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Maximum 50MB", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${candidateId}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("candidate-videos").upload(path, file);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("candidate-videos").getPublicUrl(path);
+      setVideoUrl(urlData.publicUrl);
+      toast({ title: "Video uploaded", description: "URL populated. Click Save to add the clip." });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = (clipId: string) => {
+    saveMutation.mutate(clips.filter(c => c.id !== clipId));
+    toast({ title: "Video clip removed" });
+  };
+
+  return (
+    <div className="bg-card rounded-xl border border-border/50 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-semibold">Video Profile</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Candidates aren't just résumés — they're video profiles.</p>
+        </div>
+        {!isDemoMode && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2 gold-glow-hover"><Plus className="w-4 h-4" />Add Video Clip</Button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border-border/50 max-w-lg">
+              <DialogHeader><DialogTitle>Add Video Clip</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Title *</Label>
+                  <Select value={title} onValueChange={setTitle}>
+                    <SelectTrigger className="mt-1 bg-muted/50"><SelectValue placeholder="Select or type a title" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Introduction">Introduction</SelectItem>
+                      <SelectItem value="Why Hospitality?">Why Hospitality?</SelectItem>
+                      <SelectItem value="Career Goals">Career Goals</SelectItem>
+                      <SelectItem value="Skills Demo">Skills Demo</SelectItem>
+                      <SelectItem value="Team Fit">Team Fit</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Or type a custom title..." className="mt-2 bg-muted/50" />
+                </div>
+                <div>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Video URL</Label>
+                  <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="YouTube, Vimeo, or direct video URL" className="mt-1 bg-muted/50" />
+                </div>
+                <div className="relative">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Or Upload Video</Label>
+                  <label className="mt-1 flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/30 transition-colors">
+                    <Upload className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{uploading ? "Uploading..." : "Click to upload (max 50MB)"}</span>
+                    <input type="file" accept="video/*" className="hidden" onChange={handleFileUpload} disabled={uploading} />
+                  </label>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                  <Button className="gold-glow-hover" onClick={handleAddClip} disabled={!title.trim() || !videoUrl.trim() || saveMutation.isPending}>
+                    {saveMutation.isPending ? "Saving..." : "Save Clip"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+      {clips.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {clips.map((clip) => {
+            const embedUrl = getEmbedUrl(clip.url);
+            const isDirect = clip.url.match(/\.(mp4|webm|ogg)(\?|$)/i);
+            return (
+              <motion.div key={clip.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="rounded-lg border border-border/50 overflow-hidden bg-muted/20">
+                <div className="aspect-video bg-black relative">
+                  {isDirect ? (
+                    <video src={embedUrl || clip.url} controls className="w-full h-full object-contain" />
+                  ) : embedUrl ? (
+                    <iframe src={embedUrl} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <a href={clip.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                        <Play className="w-10 h-10" />
+                        <span className="text-xs">Open Video</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold">{clip.title}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(clip.uploaded_at).toLocaleDateString()}</p>
+                  </div>
+                  {!isDemoMode && (
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(clip.id)}>
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12">
+          <span className="text-4xl mb-3">🎬</span>
+          <p className="text-sm text-muted-foreground text-center max-w-md">Add video clips to create a rich candidate profile. Hiring managers watch them before interviews.</p>
         </div>
       )}
     </div>
