@@ -7,8 +7,13 @@ import {
   ArrowLeft, User, ClipboardCheck, FileText, CalendarDays,
   FileSignature, CheckSquare, Users, Activity, GraduationCap,
   Home, StickyNote, MapPin, Phone, Mail, ExternalLink, Trash2,
-  Edit, Plus, Send, Link as LinkIcon, X, Video, Upload, Play
+  Edit, Plus, Send, Link as LinkIcon, X, Video, Upload, Play,
+  Shield
 } from "lucide-react";
+import { PreScreeningSection } from "@/components/candidate/PreScreeningSection";
+import { BuddyMatchingSection } from "@/components/candidate/BuddyMatchingSection";
+import { PlacementRiskAlert } from "@/components/candidate/PlacementRiskAlert";
+import { TeamCompatibilityPreview } from "@/components/candidate/TeamCompatibilityPreview";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -102,8 +107,20 @@ export default function CandidateProfile() {
     }
   };
 
+  const orgName = isDemoMode ? "Demo Hotel Group" : undefined;
+
   return (
     <div className="max-w-[1600px] mx-auto">
+      {/* Placement Risk Alert */}
+      {candidate.archetype && candidate.prescreening_complete && (
+        <PlacementRiskAlert
+          candidateArchetype={candidate.archetype}
+          candidateName={candidate.full_name}
+          organizationName={orgName}
+          isDemoMode={isDemoMode}
+        />
+      )}
+
       {isAtRisk && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
           className="bg-destructive/15 border border-destructive/30 rounded-xl p-4 mb-6 flex items-center gap-3">
@@ -168,12 +185,12 @@ export default function CandidateProfile() {
 
           {activeSection === "personal" && <PersonalInfo candidate={candidate} isDemoMode={isDemoMode} onDelete={!isDemoMode ? handleDelete : undefined} onUpdate={!isDemoMode ? handleUpdate : undefined} />}
           {activeSection === "video" && <VideoProfileSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
-          {activeSection === "prescreening" && <PreScreening candidate={candidate} />}
+          {activeSection === "prescreening" && <PreScreeningSection candidate={candidate} isDemoMode={isDemoMode} onUpdate={!isDemoMode ? handleUpdate : undefined} />}
           {activeSection === "dossier" && <DossierSection candidate={candidate} isDemoMode={isDemoMode} />}
           {activeSection === "interviews" && <InterviewSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
           {activeSection === "offer" && <OfferSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
           {activeSection === "logistics" && <LogisticsSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
-          {activeSection === "buddy" && <PlaceholderSection title="Buddy Assignment" emoji="🤝" description="Match candidates with team buddies based on archetype compatibility." />}
+          {activeSection === "buddy" && <BuddyMatchingSection candidateId={candidate.id} candidateArchetype={candidate.archetype} organizationId={candidate.organization_id} isDemoMode={isDemoMode} />}
           {activeSection === "engagement" && <EngagementSection candidate={candidate} />}
           {activeSection === "academy" && <PlaceholderSection title="Academy Training Progress" emoji="📚" description="Academy integration coming soon." isPlaceholder />}
           {activeSection === "housing" && <PlaceholderSection title="Housing Accommodation" emoji="🏠" description="Housing integration coming soon." isPlaceholder />}
@@ -449,111 +466,7 @@ function VideoProfileSection({ candidateId, isDemoMode }: { candidateId: string;
   );
 }
 
-/* ===================== PRE-SCREENING ===================== */
-function PreScreening({ candidate }: { candidate: Candidate }) {
-  const [linksOpen, setLinksOpen] = useState(false);
-  const scores = candidate.tribe_viral_scores;
-  const dimensions = scores
-    ? [
-        { name: "Autonomy", score: scores.autonomy }, { name: "Collaboration", score: scores.collaboration },
-        { name: "Precision", score: scores.precision }, { name: "Adaptability", score: scores.adaptability }, { name: "Leadership", score: scores.leadership },
-      ]
-    : [];
-
-  const tribeViralLink = `yoursite.com/tribe-viral?c=${candidate.id}`;
-  const careerCompassLink = `yoursite.com/career-compass?c=${candidate.id}`;
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-card rounded-xl border border-border/50 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Tribe-Viral Assessment</h2>
-          <div className="flex gap-2">
-            <Dialog open={linksOpen} onOpenChange={setLinksOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1"><Send className="w-3.5 h-3.5" />Send Assessment Links</Button>
-              </DialogTrigger>
-              <DialogContent className="bg-card border-border/50 max-w-lg">
-                <DialogHeader><DialogTitle>Assessment Links</DialogTitle></DialogHeader>
-                <p className="text-sm text-muted-foreground mb-4">Share these links with the candidate to complete their assessments.</p>
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Tribe-Viral Assessment</Label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Input value={tribeViralLink} readOnly className="bg-muted/50 font-mono text-xs" />
-                      <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(tribeViralLink); }}><LinkIcon className="w-3.5 h-3.5" /></Button>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Career Compass</Label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Input value={careerCompassLink} readOnly className="bg-muted/50 font-mono text-xs" />
-                      <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(careerCompassLink); }}><LinkIcon className="w-3.5 h-3.5" /></Button>
-                    </div>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-            <Button variant="ghost" size="sm" className="gap-1 text-primary"><ExternalLink className="w-3.5 h-3.5" /> View Full Assessment</Button>
-          </div>
-        </div>
-        {candidate.archetype ? (
-          <>
-            <div className="flex items-center gap-3 mb-6">
-              <span className="text-3xl">{candidate.archetype === "lion" ? "🦁" : candidate.archetype === "whale" ? "🐋" : "🦅"}</span>
-              <div>
-                <p className="font-semibold capitalize text-lg">{candidate.archetype} Archetype</p>
-                <p className="text-sm text-muted-foreground">
-                  {candidate.archetype === "lion" ? "Natural leader, high autonomy, results-driven" : candidate.archetype === "whale" ? "Team player, collaborative, relationship-focused" : "Detail-oriented, precise, quality-driven"}
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-5 gap-3">
-              {dimensions.map((dim) => (
-                <div key={dim.name} className="text-center">
-                  <div className="relative w-full h-24 flex items-end justify-center mb-2">
-                    <motion.div initial={{ height: 0 }} animate={{ height: `${dim.score}%` }} transition={{ duration: 0.8, delay: 0.2 }}
-                      className={`w-8 rounded-t-md ${dim.score >= 80 ? "bg-success" : dim.score >= 60 ? "bg-primary" : "bg-muted-foreground/30"}`} />
-                  </div>
-                  <p className="text-xs font-medium">{dim.name}</p>
-                  <p className="text-xs text-muted-foreground">{dim.score}</p>
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">Assessment pending</p>
-        )}
-      </div>
-
-      <div className="bg-card rounded-xl border border-border/50 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Career Compass</h2>
-          <Button variant="ghost" size="sm" className="gap-1 text-primary"><ExternalLink className="w-3.5 h-3.5" /> View Full Roadmap</Button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {["Become Head Chef within 2 years", "Achieve Michelin recognition", "Open own restaurant by 35"].map((milestone, i) => (
-            <div key={i} className="bg-muted/50 rounded-lg p-4">
-              <p className="text-xs text-muted-foreground mb-1">Milestone {i + 1}</p>
-              <p className="text-sm font-medium">{milestone}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-6 pt-6 border-t border-border/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {candidate.prescreening_complete ? (
-                <Badge className="bg-success/20 text-success border-0">✓ Pre-Screening Complete</Badge>
-              ) : (
-                <Badge variant="secondary">Pre-Screening Incomplete</Badge>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+/* PreScreening section moved to src/components/candidate/PreScreeningSection.tsx */
 
 /* ===================== DOSSIER SECTION ===================== */
 function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDemoMode: boolean }) {
@@ -719,6 +632,9 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
               </Badge>
             </div>
           ))}
+          {candidate.archetype && (
+            <TeamCompatibilityPreview candidateArchetype={candidate.archetype} candidateName={candidate.full_name} />
+          )}
         </div>
       ) : (
         !isDemoMode && candidate.prescreening_complete && (
@@ -729,9 +645,14 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
         )
       )}
       {isDemoMode && (
-        <div className="flex flex-col items-center justify-center py-12">
-          <span className="text-4xl mb-3">📄</span>
-          <p className="text-sm text-muted-foreground text-center max-w-md">Generate and track PIN-protected dossiers for hiring managers.</p>
+        <div className="space-y-4">
+          <div className="flex flex-col items-center justify-center py-12">
+            <span className="text-4xl mb-3">📄</span>
+            <p className="text-sm text-muted-foreground text-center max-w-md">Generate and track PIN-protected dossiers for hiring managers.</p>
+          </div>
+          {candidate.archetype && (
+            <TeamCompatibilityPreview candidateArchetype={candidate.archetype} candidateName={candidate.full_name} />
+          )}
         </div>
       )}
     </div>

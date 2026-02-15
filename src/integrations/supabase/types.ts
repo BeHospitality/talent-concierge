@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      assessment_links: {
+        Row: {
+          assessment_url: string
+          candidate_id: string
+          completed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          sent_at: string
+          sent_via: string
+          token: string
+        }
+        Insert: {
+          assessment_url: string
+          candidate_id: string
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          sent_at?: string
+          sent_via?: string
+          token: string
+        }
+        Update: {
+          assessment_url?: string
+          candidate_id?: string
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          sent_at?: string
+          sent_via?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_links_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buddy_assignments: {
         Row: {
           assigned_at: string
@@ -693,6 +737,66 @@ export type Database = {
           status?: Database["public"]["Enums"]["org_status"]
         }
         Relationships: []
+      }
+      placement_risks: {
+        Row: {
+          alternative_placements: Json
+          calculated_at: string
+          candidate_id: string
+          id: string
+          overridden_by: string | null
+          override_reason: string | null
+          recommendations: Json
+          risk_factors: Json
+          risk_level: string
+          risk_score: number
+          target_department: string | null
+          target_organization_id: string | null
+        }
+        Insert: {
+          alternative_placements?: Json
+          calculated_at?: string
+          candidate_id: string
+          id?: string
+          overridden_by?: string | null
+          override_reason?: string | null
+          recommendations?: Json
+          risk_factors?: Json
+          risk_level?: string
+          risk_score?: number
+          target_department?: string | null
+          target_organization_id?: string | null
+        }
+        Update: {
+          alternative_placements?: Json
+          calculated_at?: string
+          candidate_id?: string
+          id?: string
+          overridden_by?: string | null
+          override_reason?: string | null
+          recommendations?: Json
+          risk_factors?: Json
+          risk_level?: string
+          risk_score?: number
+          target_department?: string | null
+          target_organization_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "placement_risks_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "placement_risks_target_organization_id_fkey"
+            columns: ["target_organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prescreening_data: {
         Row: {
