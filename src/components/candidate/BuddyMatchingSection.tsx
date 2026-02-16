@@ -7,7 +7,7 @@ import { Users, Sparkles, AlertTriangle, Send, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Archetype } from "@/data/mockData";
+import { type Archetype, mockTeamMembers } from "@/data/mockData";
 
 interface BuddyMatchingSectionProps {
   candidateId: string;
@@ -54,14 +54,15 @@ interface TeamMember {
   tribe_viral_archetype: Archetype | null;
 }
 
-// Demo team members
-const DEMO_TEAM: TeamMember[] = [
-  { id: "t1", full_name: "Sarah O'Brien", department: "Front of House", role: "FOH Manager", photo_url: null, tribe_viral_archetype: "whale" },
-  { id: "t2", full_name: "James Murphy", department: "Kitchen", role: "Sous Chef", photo_url: null, tribe_viral_archetype: "falcon" },
-  { id: "t3", full_name: "Aoife Kelly", department: "Front of House", role: "Senior Server", photo_url: null, tribe_viral_archetype: "lion" },
-  { id: "t4", full_name: "Raj Patel", department: "Kitchen", role: "CDP", photo_url: null, tribe_viral_archetype: "whale" },
-  { id: "t5", full_name: "Emma Walsh", department: "Housekeeping", role: "Team Lead", photo_url: null, tribe_viral_archetype: "whale" },
-];
+// Demo team members — sourced from centralised mock data
+const DEMO_TEAM: TeamMember[] = mockTeamMembers.map((m) => ({
+  id: m.id,
+  full_name: m.full_name,
+  department: m.department,
+  role: m.role,
+  photo_url: m.photo_url,
+  tribe_viral_archetype: m.tribe_viral_archetype,
+}));
 
 export function BuddyMatchingSection({ candidateId, candidateArchetype, organizationId, isDemoMode }: BuddyMatchingSectionProps) {
   const [showAll, setShowAll] = useState(false);
@@ -150,7 +151,7 @@ export function BuddyMatchingSection({ candidateId, candidateArchetype, organiza
   const scoreBg = (s: number) => s >= 80 ? "bg-success/15 border-success/30" : s >= 60 ? "bg-primary/15 border-primary/30" : "bg-destructive/15 border-destructive/30";
 
   const currentBuddy = isDemoMode
-    ? { team_members: DEMO_TEAM[0], match_score: 85, match_reason: getMatchReason("lion", "whale", "Sarah O'Brien", "Front of House"), status: "active" }
+    ? { team_members: DEMO_TEAM[0], match_score: 85, match_reason: getMatchReason("lion", "whale", DEMO_TEAM[0].full_name, DEMO_TEAM[0].department), status: "active" }
     : existingAssignment;
 
   return (

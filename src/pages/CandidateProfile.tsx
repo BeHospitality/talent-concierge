@@ -107,7 +107,7 @@ export default function CandidateProfile() {
     }
   };
 
-  const orgName = isDemoMode ? "Demo Hotel Group" : undefined;
+  const orgName = isDemoMode ? "Kilkea Castle Hotel" : undefined;
 
   return (
     <div className="max-w-[1600px] mx-auto">

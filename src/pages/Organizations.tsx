@@ -132,15 +132,19 @@ export default function Organizations() {
               <th className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-6 py-3">Contact</th>
               <th className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-6 py-3">Status</th>
               <th className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-6 py-3">Candidates</th>
+              {isDemoMode && <th className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-6 py-3">Health</th>}
             </tr></thead>
             <tbody>
               {orgs.map((org: any, i: number) => (
                 <motion.tr key={org.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }} className="border-b border-border/30 hover:bg-accent/30 transition-colors cursor-pointer">
-                  <td className="px-6 py-4"><div className="flex items-center gap-3"><Building2 className="w-5 h-5 text-primary" /><span className="font-medium text-sm">{org.organization_name}</span></div></td>
+              <td className="px-6 py-4"><div className="flex items-center gap-3"><Building2 className="w-5 h-5 text-primary" /><span className="font-medium text-sm">{org.organization_name}</span></div></td>
                   <td className="px-6 py-4 text-sm text-muted-foreground font-mono">{org.org_code}</td>
                   <td className="px-6 py-4"><p className="text-sm">{org.contact_name}</p><p className="text-xs text-muted-foreground">{org.contact_email}</p></td>
                   <td className="px-6 py-4"><Badge className={`capitalize text-[10px] border-0 ${statusColor(org.status)}`}>{org.status}</Badge></td>
                   <td className="px-6 py-4"><div className="flex items-center gap-1 text-sm"><Users className="w-3.5 h-3.5 text-muted-foreground" />{org.candidates_linked ?? 0}</div></td>
+                  {isDemoMode && (org as any).health_score != null && (
+                    <td className="px-6 py-4"><span className="text-sm font-semibold">{(org as any).health_score}/100</span></td>
+                  )}
                 </motion.tr>
               ))}
             </tbody>
