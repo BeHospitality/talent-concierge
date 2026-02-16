@@ -34,6 +34,9 @@ export default function CandidateCard({ candidate, index }: Props) {
         </div>
         <div className="min-w-0">
           <h3 className="font-semibold text-sm truncate">{candidate.full_name}</h3>
+          {candidate.role_title && (
+            <p className="text-xs text-muted-foreground truncate">{candidate.role_title}</p>
+          )}
           <div className="flex items-center gap-1 text-muted-foreground">
             <MapPin className="w-3 h-3" />
             <span className="text-xs truncate">{candidate.desired_location}</span>
