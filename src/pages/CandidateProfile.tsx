@@ -160,7 +160,10 @@ export default function CandidateProfile() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-xl font-bold">{candidate.full_name}</h1>
+                  <h1 className="text-xl font-bold">
+                    {candidate.full_name}
+                    {candidate.role_title && <span className="text-muted-foreground font-normal"> • {candidate.role_title}</span>}
+                  </h1>
                   <Badge variant={isAtRisk ? "destructive" : "secondary"}>{STAGE_LABELS[candidate.current_stage]}</Badge>
                   {candidate.archetype && <Badge variant="outline" className="capitalize">{candidate.archetype}</Badge>}
                 </div>
