@@ -14,6 +14,7 @@ import { PreScreeningSection } from "@/components/candidate/PreScreeningSection"
 import { BuddyMatchingSection } from "@/components/candidate/BuddyMatchingSection";
 import { PlacementRiskAlert } from "@/components/candidate/PlacementRiskAlert";
 import { TeamCompatibilityPreview } from "@/components/candidate/TeamCompatibilityPreview";
+import { ProfessionalView } from "@/components/candidate/ProfessionalView";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -148,6 +149,14 @@ export default function CandidateProfile() {
                 <item.icon className="w-4 h-4" />{item.label}
               </button>
             ))}
+            {isDemoMode && id === "c3" && (
+              <button onClick={() => setActiveSection("professional")}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors mt-1 ${activeSection === "professional" ? "bg-primary/15 text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"}`}>
+                <span className="w-4 h-4 flex items-center justify-center text-xs">✨</span>
+                <span className="flex-1 text-left">Professional View</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "rgba(245,158,11,0.2)", color: "#F59E0B" }}>Sends on acceptance</span>
+              </button>
+            )}
           </div>
         </motion.aside>
 
@@ -198,6 +207,7 @@ export default function CandidateProfile() {
           {activeSection === "academy" && <PlaceholderSection title="Academy Training Progress" emoji="📚" description="Academy integration coming soon." isPlaceholder />}
           {activeSection === "housing" && <PlaceholderSection title="Housing Accommodation" emoji="🏠" description="Housing integration coming soon." isPlaceholder />}
           {activeSection === "notes" && <NotesSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
+          {activeSection === "professional" && isDemoMode && id === "c3" && <ProfessionalView />}
         </motion.div>
       </div>
     </div>
