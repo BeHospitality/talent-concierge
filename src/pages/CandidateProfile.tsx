@@ -138,6 +138,8 @@ export default function CandidateProfile() {
           candidateArchetype={candidate.archetype}
           candidateName={candidate.full_name}
           organizationName={orgName}
+          organizationId={candidate.organization_id}
+          targetDepartment="Front Office"
           isDemoMode={isDemoMode}
         />
       )}
