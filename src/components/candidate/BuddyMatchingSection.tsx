@@ -7,6 +7,7 @@ import { Users, Sparkles, AlertTriangle, Send, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { sendInAppNotification, sendSMSNotification } from "@/lib/notifications";
 import { type Archetype, mockTeamMembers } from "@/data/mockData";
 
 interface BuddyMatchingSectionProps {
@@ -122,14 +123,53 @@ export function BuddyMatchingSection({ candidateId, candidateArchetype, organiza
   const notifyBuddy = useMutation({
     mutationFn: async () => {
       if (!existingAssignment) return;
-      const { error } = await supabase.from("buddy_assignments")
+
+      const { data: candidate } = await supabase
+        .from("candidates")
+        .select("full_name, email")
+        .eq("id", candidateId)
+        .single();
+
+      if (!candidate) throw new Error("Candidate not found");
+
+      const buddy = (existingAssignment as any).team_members;
+
+      // 1. In-app notification (works now)
+      await sendInAppNotification({
+        recipient_id: existingAssignment.buddy_id,
+        type: "buddy_assignment",
+        title: "🤝 New Buddy Assignment",
+        message: `You've been matched with ${candidate.full_name}!`,
+        link: `/candidate/${candidateId}`,
+        metadata: {
+          candidate_id: candidateId,
+          candidate_name: candidate.full_name,
+          match_score: existingAssignment.match_score,
+          match_reason: existingAssignment.match_reason,
+        },
+      });
+
+      // 2. SMS (logged for now, Twilio in Week 4)
+      if (buddy?.phone) {
+        await sendSMSNotification(
+          buddy.phone,
+          `Hi ${buddy.full_name}! You've been matched as a buddy for ${candidate.full_name} (${existingAssignment.match_score}% match). Check your Hub dashboard. 🤝`
+        );
+      }
+
+      // 3. Update status
+      const { error } = await supabase
+        .from("buddy_assignments")
         .update({ status: "notified", notified_at: new Date().toISOString() })
         .eq("id", existingAssignment.id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["buddy_assignment", candidateId] });
-      toast({ title: "Buddy notified", description: "Introduction email sent to buddy." });
+      toast({ title: "Buddy notified", description: "In-app notification sent.", duration: 3000 });
+    },
+    onError: (e: any) => {
+      toast({ title: "Notification failed", description: e.message, variant: "destructive" });
     },
   });
 

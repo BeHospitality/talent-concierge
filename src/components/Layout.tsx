@@ -1,11 +1,12 @@
-import { ReactNode, useState, useMemo } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ReactNode, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useDemoMode } from "@/contexts/DemoModeContext";
 import { useAuth } from "@/hooks/useAuth";
-import { Bell, Search, Settings, LayoutDashboard, Users, Building2, LogOut } from "lucide-react";
+import { Search, Settings, LayoutDashboard, Building2, LogOut } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -35,7 +36,7 @@ export default function Layout({ children, onSearch }: LayoutProps) {
     window.dispatchEvent(new CustomEvent("global-search", { detail: value }));
   };
 
-  const atRiskCount = 3;
+
 
   return (
     <div className="min-h-screen bg-gradient-radial">
@@ -97,14 +98,7 @@ export default function Layout({ children, onSearch }: LayoutProps) {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="relative p-2 rounded-md hover:bg-accent/50 transition-colors">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              {atRiskCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
-                  {atRiskCount}
-                </span>
-              )}
-            </button>
+            <NotificationBell />
 
             <div className="flex items-center gap-2 pl-4 border-l border-border/50">
               <span className="text-xs font-medium text-muted-foreground">DEMO</span>
