@@ -946,6 +946,7 @@ export type Database = {
           full_name: string
           id: string
           is_available_as_buddy: boolean
+          organization_id: string | null
           photo_url: string | null
           role: string
           tribe_viral_archetype: Database["public"]["Enums"]["archetype"] | null
@@ -957,6 +958,7 @@ export type Database = {
           full_name: string
           id?: string
           is_available_as_buddy?: boolean
+          organization_id?: string | null
           photo_url?: string | null
           role: string
           tribe_viral_archetype?:
@@ -970,13 +972,22 @@ export type Database = {
           full_name?: string
           id?: string
           is_available_as_buddy?: boolean
+          organization_id?: string | null
           photo_url?: string | null
           role?: string
           tribe_viral_archetype?:
             | Database["public"]["Enums"]["archetype"]
             | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "team_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

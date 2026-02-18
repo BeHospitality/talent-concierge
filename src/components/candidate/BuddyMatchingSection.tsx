@@ -76,6 +76,7 @@ export function BuddyMatchingSection({ candidateId, candidateArchetype, organiza
       const { data, error } = await supabase
         .from("team_members")
         .select("*")
+        .eq("organization_id", organizationId)
         .eq("is_available_as_buddy", true)
         .not("tribe_viral_archetype", "is", null);
       if (error) throw error;
