@@ -74,9 +74,29 @@ export default function CandidateProfile() {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("personal");
 
-  const candidate = isDemoMode
+  // Fetch prescreening data to get archetype
+  const { data: prescreeningData } = useQuery({
+    queryKey: ["prescreening_data", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("prescreening_data")
+        .select("tribe_viral_archetype, tribe_viral_scores")
+        .eq("candidate_id", id!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !isDemoMode && !!id,
+  });
+
+  const baseCandidate = isDemoMode
     ? mockCandidates.find((c) => c.id === id)
     : dbCandidates.map(dbToCandidate).find((c) => c.id === id);
+
+  // Merge prescreening archetype into candidate
+  const candidate = baseCandidate && !isDemoMode && prescreeningData
+    ? { ...baseCandidate, archetype: prescreeningData.tribe_viral_archetype as any }
+    : baseCandidate;
 
   if (!candidate) {
     return (
