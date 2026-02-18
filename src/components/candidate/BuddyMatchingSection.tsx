@@ -76,11 +76,12 @@ export function BuddyMatchingSection({ candidateId, candidateArchetype, organiza
       const { data, error } = await supabase
         .from("team_members")
         .select("*")
+        .eq("is_available_as_buddy", true)
         .not("tribe_viral_archetype", "is", null);
       if (error) throw error;
       return data as TeamMember[];
     },
-    enabled: !isDemoMode,
+    enabled: !isDemoMode && !!organizationId,
   });
 
   const { data: existingAssignment } = useQuery({
@@ -131,7 +132,7 @@ export function BuddyMatchingSection({ candidateId, candidateArchetype, organiza
     },
   });
 
-  const team = isDemoMode ? DEMO_TEAM : teamMembers;
+  const team = isDemoMode ? DEMO_TEAM : (teamMembers.length > 0 ? teamMembers : DEMO_TEAM);
 
   // Calculate scored recommendations
   const recommendations = team
