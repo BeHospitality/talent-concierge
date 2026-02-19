@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_whitelist: {
+        Row: {
+          added_at: string | null
+          email: string
+          name: string | null
+        }
+        Insert: {
+          added_at?: string | null
+          email: string
+          name?: string | null
+        }
+        Update: {
+          added_at?: string | null
+          email?: string
+          name?: string | null
+        }
+        Relationships: []
+      }
       assessment_links: {
         Row: {
           assessment_url: string
