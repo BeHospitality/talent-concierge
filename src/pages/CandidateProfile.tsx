@@ -8,13 +8,18 @@ import {
   FileSignature, CheckSquare, Users, Activity, GraduationCap,
   Home, StickyNote, MapPin, Phone, Mail, ExternalLink, Trash2,
   Edit, Plus, Send, Link as LinkIcon, X, Video, Upload, Play,
-  Shield
+  Shield, Zap
 } from "lucide-react";
 import { PreScreeningSection } from "@/components/candidate/PreScreeningSection";
 import { BuddyMatchingSection } from "@/components/candidate/BuddyMatchingSection";
 import { PlacementRiskAlert } from "@/components/candidate/PlacementRiskAlert";
 import { JourneyTimeline } from "@/components/journey/JourneyTimeline";
 import { JourneyProgressCard } from "@/components/journey/JourneyProgressCard";
+import { useEngagementCheckins } from "@/hooks/useEngagementCheckins";
+import { VelocityCard } from "@/components/engagement/VelocityCard";
+import { VelocityBadge } from "@/components/engagement/VelocityBadge";
+import { EngagementChart } from "@/components/engagement/EngagementChart";
+import { MOOD_EMOJIS, MOOD_LABELS, CONFIDENCE_EMOJIS, CONFIDENCE_LABELS, TEAM_EMOJIS, TEAM_LABELS } from "@/utils/velocityScoring";
 import { TeamCompatibilityPreview } from "@/components/candidate/TeamCompatibilityPreview";
 import { ProfessionalView } from "@/components/candidate/ProfessionalView";
 import { Button } from "@/components/ui/button";
@@ -226,7 +231,7 @@ export default function CandidateProfile() {
           )}
 
           {activeSection === "personal" && <PersonalInfo candidate={candidate} isDemoMode={isDemoMode} onDelete={!isDemoMode ? handleDelete : undefined} onUpdate={!isDemoMode ? handleUpdate : undefined} />}
-          {activeSection === "journey" && !isDemoMode && <JourneyTimeline candidateId={candidate.id} organizationId={candidate.organization_id} />}
+          {activeSection === "journey" && !isDemoMode && <JourneyTimeline candidateId={candidate.id} organizationId={candidate.organization_id} candidateName={candidate.full_name} />}
           {activeSection === "journey" && isDemoMode && (
             <div className="bg-card rounded-xl border border-border/50 p-6 text-center">
               <p className="text-muted-foreground text-sm">Journey Blueprint is available in live mode. Switch off demo mode to view real journey data.</p>
@@ -239,7 +244,7 @@ export default function CandidateProfile() {
           {activeSection === "offer" && <OfferSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
           {activeSection === "logistics" && <LogisticsSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
           {activeSection === "buddy" && <BuddyMatchingSection candidateId={candidate.id} candidateArchetype={candidate.archetype} organizationId={candidate.organization_id} isDemoMode={isDemoMode} />}
-          {activeSection === "engagement" && <EngagementSection candidate={candidate} />}
+          {activeSection === "engagement" && <EngagementSectionNew candidateId={candidate.id} candidate={candidate} isDemoMode={isDemoMode} />}
           {activeSection === "academy" && <PlaceholderSection title="Academy Training Progress" emoji="📚" description="Academy integration coming soon." isPlaceholder />}
           {activeSection === "housing" && <PlaceholderSection title="Housing Accommodation" emoji="🏠" description="Housing integration coming soon." isPlaceholder />}
           {activeSection === "notes" && <NotesSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
@@ -1213,48 +1218,49 @@ function NotesSection({ candidateId, isDemoMode }: { candidateId: string; isDemo
   );
 }
 
-/* ===================== ENGAGEMENT ===================== */
-function EngagementSection({ candidate }: { candidate: Candidate }) {
+/* ===================== ENGAGEMENT (NEW — Velocity) ===================== */
+function EngagementSectionNew({ candidateId, candidate, isDemoMode }: { candidateId: string; candidate: Candidate; isDemoMode: boolean }) {
+  const { checkins, velocity, isLoading } = useEngagementCheckins(isDemoMode ? undefined : candidateId);
+
+  // Legacy fallback for demo mode
   const score = candidate.engagement_score;
   const color = score >= 80 ? "text-success" : score >= 50 ? "text-warning" : "text-destructive";
-  const timeline = [
-    { type: "email_sent", date: "Feb 10", label: "Check-in email sent" },
-    { type: "email_opened", date: "Feb 10", label: "Email opened" },
-    { type: "checkin_completed", date: "Feb 8", label: "Check-in completed" },
-    { type: "interview_attended", date: "Feb 5", label: "Interview attended — Round 1" },
-    { type: "form_submitted", date: "Feb 3", label: "Career Compass submitted" },
-    { type: "form_submitted", date: "Feb 1", label: "Tribe-Viral assessment completed" },
-  ];
-
-  const premiumFeatures = [
-    {
-      icon: "⚡",
-      lucideIcon: CalendarDays,
-      title: "Automated Check-In Scheduling",
-      description: "System automatically sends check-in links after Shifts 1, 2, 3, 4, 5, then weekly, then monthly. Tracks completion status and engagement trends.",
-    },
-    {
-      icon: "📞",
-      lucideIcon: Phone,
-      title: "Manager Action Scripts",
-      description: "Pre-written scripts for Safety Call (within 24 hours) and Hero's Welcome (first 30 minutes). Prompts managers when actions are due with one-click marking as complete.",
-    },
-    {
-      icon: "🚨",
-      lucideIcon: Shield,
-      title: "Ghosting Risk Alerts",
-      description: "Real-time notifications when engagement score drops below threshold or candidate goes dark. Includes recommended intervention actions.",
-    },
-    {
-      icon: "📤",
-      lucideIcon: Send,
-      title: "One-Click Check-In Sending",
-      description: "Send check-ins via Email, WhatsApp, SMS, or copy link. Multi-channel delivery with tracking and automated follow-ups.",
-    },
-  ];
 
   return (
     <div className="space-y-6">
+      {/* Velocity Card (live data) */}
+      {!isDemoMode && !isLoading && (
+        <>
+          <VelocityCard velocity={velocity} checkins={checkins} />
+          <EngagementChart checkins={checkins} />
+
+          {/* Check-in History */}
+          {checkins.length > 0 && (
+            <div className="bg-card rounded-xl border border-border/50 p-5">
+              <h3 className="text-sm font-semibold mb-3">Check-In History</h3>
+              <div className="space-y-3">
+                {[...checkins].reverse().map((c) => (
+                  <div key={c.id} className="p-3 rounded-lg bg-muted/30 border border-border/30">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold">Day {c.day_number} · {c.phase}</span>
+                      <span className="text-[10px] text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs">
+                      <span>Mood: {MOOD_EMOJIS[c.mood - 1]} {MOOD_LABELS[c.mood - 1]}</span>
+                      {c.confidence && <span>Confidence: {CONFIDENCE_EMOJIS[c.confidence - 1]} {CONFIDENCE_LABELS[c.confidence - 1]}</span>}
+                      {c.team_integration && <span>Team: {TEAM_EMOJIS[c.team_integration - 1]} {TEAM_LABELS[c.team_integration - 1]}</span>}
+                    </div>
+                    {c.concerns && <p className="text-xs text-warning mt-1">⚠️ {c.concerns}</p>}
+                    {c.wins && <p className="text-xs text-success mt-1">🎉 {c.wins}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Legacy engagement score */}
       <div className="bg-card rounded-xl border border-border/50 p-6">
         <h2 className="text-lg font-semibold mb-4">Engagement Score</h2>
         <div className="flex items-center gap-6">
@@ -1273,107 +1279,13 @@ function EngagementSection({ candidate }: { candidate: Candidate }) {
           </div>
         </div>
       </div>
-      <div className="bg-card rounded-xl border border-border/50 p-6">
-        <h2 className="text-lg font-semibold mb-4">Activity Timeline</h2>
-        <div className="space-y-4">
-          {timeline.map((event, i) => (
-            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
-                {event.type.includes("email") ? <Mail className="w-3.5 h-3.5 text-muted-foreground" /> :
-                 event.type.includes("interview") ? <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" /> :
-                 <ClipboardCheck className="w-3.5 h-3.5 text-muted-foreground" />}
-              </div>
-              <div>
-                <p className="text-sm font-medium">{event.label}</p>
-                <p className="text-xs text-muted-foreground">{event.date}, 2026</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* Premium Automation Features */}
-      <div className="relative">
-        {/* Separator */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="flex-1 h-px bg-primary/30" />
-          <span className="text-xs font-semibold text-primary uppercase tracking-widest whitespace-nowrap">Premium Automation Features</span>
-          <div className="flex-1 h-px bg-primary/30" />
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="rounded-xl border border-primary/20 bg-secondary/30 p-6"
-        >
-          <div className="text-center mb-6">
-            <h3 className="text-lg font-bold">Available to Active Clients</h3>
-            <p className="text-sm text-muted-foreground mt-1">Unlock complete automation when you join our white-glove service</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {premiumFeatures.map((feature, i) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + i * 0.08 }}
-                className="relative rounded-lg border border-primary/25 bg-card/60 p-5 overflow-hidden group"
-              >
-                {/* Lock overlay */}
-                <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px] z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <div className="w-10 h-10 rounded-full bg-muted/80 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                  </div>
-                </div>
-
-                {/* Gold badge */}
-                <div className="absolute top-3 right-3 z-0">
-                  <Badge className="bg-primary/15 text-primary border-primary/30 text-[9px] font-semibold px-1.5 py-0.5">
-                    Active Clients
-                  </Badge>
-                </div>
-
-                {/* Content */}
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-lg">{feature.icon}</span>
-                  </div>
-                  <div className="flex-1 min-w-0 pr-16">
-                    <h4 className="text-sm font-semibold mb-1">{feature.title}</h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* CTA */}
-          <div className="text-center space-y-3">
-            <Button
-              className="gold-glow-hover gap-2"
-              onClick={() => window.location.href = "mailto:contact@be.ie?subject=Premium%20Features%20Inquiry"}
-            >
-              <Mail className="w-4 h-4" />
-              Contact Us to Activate Premium Features
-            </Button>
-            <p className="text-xs text-muted-foreground max-w-md mx-auto">
-              Premium automation is included in all white-glove service tiers starting at €15,600/year for Charter Partners (€24,000/year standard rate).
-            </p>
-            <a
-              href="https://be.ie/pricing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-            >
-              Learn more about pricing <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-        </motion.div>
-      </div>
     </div>
   );
+}
+
+/* ===================== LEGACY ENGAGEMENT (kept for reference) ===================== */
+function EngagementSection({ candidate }: { candidate: Candidate }) {
+  return null; // replaced by EngagementSectionNew
 }
 
 /* ===================== PLACEHOLDER ===================== */

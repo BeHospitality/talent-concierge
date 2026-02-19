@@ -5,6 +5,7 @@ import { JourneyEventNode } from "./JourneyEventNode";
 
 interface JourneyEvent {
   id: string;
+  journey_id?: string | null;
   phase: string;
   event_type: string;
   title: string;
@@ -41,10 +42,13 @@ interface JourneyPhaseSectionProps {
   isCurrent: boolean;
   isCompleted: boolean;
   isFuture: boolean;
+  candidateId?: string;
+  candidateName?: string;
+  organizationId?: string | null;
   onEventCompleted: () => void;
 }
 
-export function JourneyPhaseSection({ phase, events, isCurrent, isCompleted, isFuture, onEventCompleted }: JourneyPhaseSectionProps) {
+export function JourneyPhaseSection({ phase, events, isCurrent, isCompleted, isFuture, candidateId, candidateName, organizationId, onEventCompleted }: JourneyPhaseSectionProps) {
   const [expanded, setExpanded] = useState(isCurrent);
 
   const completedCount = events.filter((e) => e.status === "completed").length;
@@ -60,7 +64,6 @@ export function JourneyPhaseSection({ phase, events, isCurrent, isCompleted, isF
 
   return (
     <div className={`border-l-2 ${borderColor} pl-4 mb-4`}>
-      {/* Phase header */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between py-2 group"
@@ -84,7 +87,6 @@ export function JourneyPhaseSection({ phase, events, isCurrent, isCompleted, isF
         )}
       </button>
 
-      {/* Events */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -96,7 +98,6 @@ export function JourneyPhaseSection({ phase, events, isCurrent, isCompleted, isF
             <div className="space-y-1 pb-2">
               {events
                 .sort((a, b) => {
-                  // Overdue first, then by day_offset
                   const aOverdue = a.status === "pending" && a.scheduled_for && new Date(a.scheduled_for) < new Date();
                   const bOverdue = b.status === "pending" && b.scheduled_for && new Date(b.scheduled_for) < new Date();
                   if (aOverdue && !bOverdue) return -1;
@@ -108,6 +109,9 @@ export function JourneyPhaseSection({ phase, events, isCurrent, isCompleted, isF
                     key={event.id}
                     event={event}
                     isCurrentPhase={isCurrent}
+                    candidateId={candidateId}
+                    candidateName={candidateName}
+                    organizationId={organizationId}
                     onCompleted={onEventCompleted}
                   />
                 ))}

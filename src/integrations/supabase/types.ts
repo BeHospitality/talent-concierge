@@ -434,6 +434,89 @@ export type Database = {
           },
         ]
       }
+      engagement_checkins: {
+        Row: {
+          candidate_id: string
+          concerns: string | null
+          confidence: number | null
+          created_at: string | null
+          day_number: number
+          id: string
+          journey_event_id: string | null
+          journey_id: string
+          mood: number
+          notes: string | null
+          organization_id: string | null
+          phase: string
+          recorded_by: string
+          team_integration: number | null
+          wins: string | null
+        }
+        Insert: {
+          candidate_id: string
+          concerns?: string | null
+          confidence?: number | null
+          created_at?: string | null
+          day_number: number
+          id?: string
+          journey_event_id?: string | null
+          journey_id: string
+          mood: number
+          notes?: string | null
+          organization_id?: string | null
+          phase: string
+          recorded_by?: string
+          team_integration?: number | null
+          wins?: string | null
+        }
+        Update: {
+          candidate_id?: string
+          concerns?: string | null
+          confidence?: number | null
+          created_at?: string | null
+          day_number?: number
+          id?: string
+          journey_event_id?: string | null
+          journey_id?: string
+          mood?: number
+          notes?: string | null
+          organization_id?: string | null
+          phase?: string
+          recorded_by?: string
+          team_integration?: number | null
+          wins?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagement_checkins_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagement_checkins_journey_event_id_fkey"
+            columns: ["journey_event_id"]
+            isOneToOne: false
+            referencedRelation: "journey_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagement_checkins_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journey_blueprints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagement_checkins_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hiring_managers: {
         Row: {
           created_at: string
