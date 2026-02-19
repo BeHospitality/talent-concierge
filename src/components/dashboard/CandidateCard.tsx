@@ -2,6 +2,8 @@ import { Candidate, STAGE_LABELS } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MapPin, Clock } from "lucide-react";
+import { JourneyPipelineIndicator } from "@/components/journey/JourneyPipelineIndicator";
+import { useDemoMode } from "@/contexts/DemoModeContext";
 
 interface Props {
   candidate: Candidate;
@@ -10,6 +12,7 @@ interface Props {
 
 export default function CandidateCard({ candidate, index }: Props) {
   const navigate = useNavigate();
+  const { isDemoMode } = useDemoMode();
   const isAtRisk = candidate.risk_level === "high";
   const isMedium = candidate.risk_level === "medium";
 
@@ -84,6 +87,11 @@ export default function CandidateCard({ candidate, index }: Props) {
             {candidate.engagement_score}%
           </span>
         </div>
+
+        {/* Journey indicator */}
+        {!isDemoMode && candidate.organization_id && (
+          <JourneyPipelineIndicator candidateId={candidate.id} organizationId={candidate.organization_id} />
+        )}
       </div>
     </motion.div>
   );
