@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import CandidateProfile from "./pages/CandidateProfile";
 import Organizations from "./pages/Organizations";
 import Settings from "./pages/Settings";
+import JourneyDashboard from "./pages/JourneyDashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -36,6 +37,7 @@ function ProtectedRoutes() {
         <Route path="/" element={<Index />} />
         <Route path="/candidate/:id" element={<CandidateProfile />} />
         <Route path="/organizations" element={<Organizations />} />
+        <Route path="/journeys" element={<JourneyDashboard />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

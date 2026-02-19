@@ -2,7 +2,7 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useDemoMode } from "@/contexts/DemoModeContext";
 import { useAuth } from "@/hooks/useAuth";
-import { Search, Settings, LayoutDashboard, Building2, LogOut } from "lucide-react";
+import { Search, Settings, LayoutDashboard, Building2, LogOut, Route } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +11,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
   { path: "/organizations", label: "Organizations", icon: Building2 },
+  { path: "/journeys", label: "Journeys", icon: Route },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
