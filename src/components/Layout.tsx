@@ -2,11 +2,13 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useDemoMode } from "@/contexts/DemoModeContext";
 import { useAuth } from "@/hooks/useAuth";
-import { Search, Settings, LayoutDashboard, Building2, LogOut, Route } from "lucide-react";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { Search, Settings, LayoutDashboard, Building2, LogOut, Route, Crosshair } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationBell } from "@/components/NotificationBell";
+import { Separator } from "@/components/ui/separator";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -23,6 +25,7 @@ interface LayoutProps {
 export default function Layout({ children, onSearch }: LayoutProps) {
   const { isDemoMode, toggleDemoMode } = useDemoMode();
   const { signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const location = useLocation();
   const [search, setSearch] = useState("");
 
@@ -83,6 +86,22 @@ export default function Layout({ children, onSearch }: LayoutProps) {
                   </Link>
                 );
               })}
+              {isAdmin && (
+                <>
+                  <Separator orientation="vertical" className="h-6 mx-1" />
+                  <Link
+                    to="/command-centre"
+                    className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      location.pathname === "/command-centre"
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+                    }`}
+                  >
+                    <Crosshair className="w-4 h-4" />
+                    Command Centre
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
 

@@ -547,6 +547,67 @@ export type Database = {
         }
         Relationships: []
       }
+      interventions: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          follow_up_date: string | null
+          id: string
+          intervention_type: string
+          journey_id: string | null
+          logged_by: string
+          organization_id: string | null
+          outcome: string | null
+          summary: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          intervention_type: string
+          journey_id?: string | null
+          logged_by: string
+          organization_id?: string | null
+          outcome?: string | null
+          summary: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          intervention_type?: string
+          journey_id?: string | null
+          logged_by?: string
+          organization_id?: string | null
+          outcome?: string | null
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interventions_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interventions_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journey_blueprints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interventions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interviews: {
         Row: {
           candidate_id: string
