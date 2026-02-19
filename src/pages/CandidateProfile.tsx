@@ -13,6 +13,8 @@ import {
 import { PreScreeningSection } from "@/components/candidate/PreScreeningSection";
 import { BuddyMatchingSection } from "@/components/candidate/BuddyMatchingSection";
 import { PlacementRiskAlert } from "@/components/candidate/PlacementRiskAlert";
+import { JourneyTimeline } from "@/components/journey/JourneyTimeline";
+import { JourneyProgressCard } from "@/components/journey/JourneyProgressCard";
 import { TeamCompatibilityPreview } from "@/components/candidate/TeamCompatibilityPreview";
 import { ProfessionalView } from "@/components/candidate/ProfessionalView";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,7 @@ import {
 
 const sidebarItems = [
   { id: "personal", label: "Personal Info", icon: User },
+  { id: "journey", label: "Journey", icon: MapPin },
   { id: "video", label: "Video Profile", icon: Video },
   { id: "prescreening", label: "Pre-Screening", icon: ClipboardCheck },
   { id: "dossier", label: "Dossier", icon: FileText },
@@ -217,7 +220,18 @@ export default function CandidateProfile() {
             </div>
           </div>
 
+          {/* Journey Progress Card (shown on all sections except journey itself) */}
+          {!isDemoMode && activeSection !== "journey" && (
+            <JourneyProgressCard candidateId={candidate.id} />
+          )}
+
           {activeSection === "personal" && <PersonalInfo candidate={candidate} isDemoMode={isDemoMode} onDelete={!isDemoMode ? handleDelete : undefined} onUpdate={!isDemoMode ? handleUpdate : undefined} />}
+          {activeSection === "journey" && !isDemoMode && <JourneyTimeline candidateId={candidate.id} organizationId={candidate.organization_id} />}
+          {activeSection === "journey" && isDemoMode && (
+            <div className="bg-card rounded-xl border border-border/50 p-6 text-center">
+              <p className="text-muted-foreground text-sm">Journey Blueprint is available in live mode. Switch off demo mode to view real journey data.</p>
+            </div>
+          )}
           {activeSection === "video" && <VideoProfileSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
           {activeSection === "prescreening" && <PreScreeningSection candidate={candidate} isDemoMode={isDemoMode} onUpdate={!isDemoMode ? handleUpdate : undefined} />}
           {activeSection === "dossier" && <DossierSection candidate={candidate} isDemoMode={isDemoMode} />}
