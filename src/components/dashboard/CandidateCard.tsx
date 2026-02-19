@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MapPin, Clock } from "lucide-react";
 import { JourneyPipelineIndicator } from "@/components/journey/JourneyPipelineIndicator";
+import { VelocityBadge } from "@/components/engagement/VelocityBadge";
+import { useVelocityForCandidate } from "@/hooks/useEngagementCheckins";
 import { useDemoMode } from "@/contexts/DemoModeContext";
 
 interface Props {
@@ -13,6 +15,8 @@ interface Props {
 export default function CandidateCard({ candidate, index }: Props) {
   const navigate = useNavigate();
   const { isDemoMode } = useDemoMode();
+  const isOnboarding = ["offer_accepted", "pre_arrival", "active"].includes(candidate.current_stage);
+  const { velocity } = useVelocityForCandidate(!isDemoMode && isOnboarding ? candidate.id : undefined);
   const isAtRisk = candidate.risk_level === "high";
   const isMedium = candidate.risk_level === "medium";
 
@@ -93,6 +97,13 @@ export default function CandidateCard({ candidate, index }: Props) {
           <JourneyPipelineIndicator candidateId={candidate.id} organizationId={candidate.organization_id} />
         )}
       </div>
+
+      {/* Velocity badge for onboarding/probation candidates */}
+      {velocity && (
+        <div className="mt-2 pt-2 border-t border-border/30">
+          <VelocityBadge velocity={velocity} />
+        </div>
+      )}
     </motion.div>
   );
 }

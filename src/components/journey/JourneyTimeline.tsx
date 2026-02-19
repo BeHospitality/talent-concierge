@@ -13,9 +13,10 @@ const PHASE_ORDER = ["screening", "interview", "offer", "pre_arrival", "onboardi
 interface JourneyTimelineProps {
   candidateId: string;
   organizationId: string;
+  candidateName?: string;
 }
 
-export function JourneyTimeline({ candidateId, organizationId }: JourneyTimelineProps) {
+export function JourneyTimeline({ candidateId, organizationId, candidateName }: JourneyTimelineProps) {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -151,6 +152,9 @@ export function JourneyTimeline({ candidateId, organizationId }: JourneyTimeline
               isCurrent={isCurrent}
               isCompleted={phaseCompleted}
               isFuture={isFuture}
+              candidateId={candidateId}
+              candidateName={candidateName}
+              organizationId={organizationId}
               onEventCompleted={handleRefresh}
             />
           );

@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 import { differenceInDays } from "date-fns";
+import { VelocityBadge } from "@/components/engagement/VelocityBadge";
+import { useVelocityForCandidate } from "@/hooks/useEngagementCheckins";
 import type { JourneyWithDetails } from "@/hooks/useJourneyDashboard";
 
 const PHASE_COLOURS: Record<string, { bg: string; text: string; label: string }> = {
@@ -21,7 +23,7 @@ interface Props {
   journeys: JourneyWithDetails[];
 }
 
-type SortOption = "recent" | "overdue" | "newest" | "oldest";
+type SortOption = "recent" | "overdue" | "newest" | "oldest" | "at_risk";
 
 export function ActiveJourneysList({ journeys }: Props) {
   const navigate = useNavigate();
@@ -72,6 +74,7 @@ export function ActiveJourneysList({ journeys }: Props) {
             <SelectContent>
               <SelectItem value="recent">Most Recent</SelectItem>
               <SelectItem value="overdue">Most Overdue</SelectItem>
+              <SelectItem value="at_risk">Most At Risk</SelectItem>
               <SelectItem value="newest">Newest First</SelectItem>
               <SelectItem value="oldest">Oldest First</SelectItem>
             </SelectContent>
@@ -124,6 +127,7 @@ export function ActiveJourneysList({ journeys }: Props) {
                     {dayLabel && (
                       <span className="text-[10px] font-medium text-muted-foreground">{dayLabel}</span>
                     )}
+                    <JourneyVelocityBadge candidateId={j.candidate_id} phase={j.current_phase} />
                     {overdueCount > 0 && (
                       <span className="flex items-center gap-1 text-[10px] font-semibold text-destructive">
                         <AlertTriangle className="w-3 h-3" /> {overdueCount} overdue
@@ -155,4 +159,11 @@ export function ActiveJourneysList({ journeys }: Props) {
       </div>
     </div>
   );
+}
+
+function JourneyVelocityBadge({ candidateId, phase }: { candidateId: string | null; phase: string }) {
+  const isEngagementPhase = ["onboarding", "probation"].includes(phase);
+  const { velocity } = useVelocityForCandidate(isEngagementPhase && candidateId ? candidateId : undefined);
+  if (!velocity) return null;
+  return <VelocityBadge velocity={velocity} />;
 }
