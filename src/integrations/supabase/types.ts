@@ -517,6 +517,145 @@ export type Database = {
           },
         ]
       }
+      journey_blueprints: {
+        Row: {
+          assigned_buddy_id: string | null
+          candidate_id: string | null
+          created_at: string | null
+          current_phase: string
+          day_90_date: string | null
+          id: string
+          offer_date: string | null
+          organization_id: string | null
+          start_date: string | null
+          start_work_date: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_buddy_id?: string | null
+          candidate_id?: string | null
+          created_at?: string | null
+          current_phase?: string
+          day_90_date?: string | null
+          id?: string
+          offer_date?: string | null
+          organization_id?: string | null
+          start_date?: string | null
+          start_work_date?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_buddy_id?: string | null
+          candidate_id?: string | null
+          created_at?: string | null
+          current_phase?: string
+          day_90_date?: string | null
+          id?: string
+          offer_date?: string | null
+          organization_id?: string | null
+          start_date?: string | null
+          start_work_date?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_blueprints_assigned_buddy_id_fkey"
+            columns: ["assigned_buddy_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_blueprints_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_blueprints_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_events: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string | null
+          day_offset: number | null
+          description: string | null
+          event_type: string
+          id: string
+          journey_id: string | null
+          metadata: Json | null
+          organization_id: string | null
+          phase: string
+          priority: string | null
+          scheduled_for: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          day_offset?: number | null
+          description?: string | null
+          event_type: string
+          id?: string
+          journey_id?: string | null
+          metadata?: Json | null
+          organization_id?: string | null
+          phase: string
+          priority?: string | null
+          scheduled_for?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          day_offset?: number | null
+          description?: string | null
+          event_type?: string
+          id?: string
+          journey_id?: string | null
+          metadata?: Json | null
+          organization_id?: string | null
+          phase?: string
+          priority?: string | null
+          scheduled_for?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_events_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journey_blueprints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logistics_checklist: {
         Row: {
           assigned_to: string | null
