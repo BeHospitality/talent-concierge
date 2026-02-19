@@ -5,12 +5,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DemoModeProvider } from "@/contexts/DemoModeContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import Layout from "@/components/Layout";
 import Index from "./pages/Index";
 import CandidateProfile from "./pages/CandidateProfile";
 import Organizations from "./pages/Organizations";
 import Settings from "./pages/Settings";
 import JourneyDashboard from "./pages/JourneyDashboard";
+import CommandCentre from "./pages/CommandCentre";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -18,6 +20,7 @@ const queryClient = new QueryClient();
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth();
+  const { isAdmin } = useIsAdmin();
 
   if (loading) {
     return (
@@ -38,6 +41,7 @@ function ProtectedRoutes() {
         <Route path="/candidate/:id" element={<CandidateProfile />} />
         <Route path="/organizations" element={<Organizations />} />
         <Route path="/journeys" element={<JourneyDashboard />} />
+        <Route path="/command-centre" element={isAdmin ? <CommandCentre /> : <Navigate to="/" replace />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
