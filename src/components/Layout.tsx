@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useDemoMode } from "@/contexts/DemoModeContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { Search, Settings, LayoutDashboard, Building2, LogOut, Route, Crosshair } from "lucide-react";
+import { Search, Settings, LayoutDashboard, Building2, LogOut, Route, Crosshair, FileText } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -99,6 +99,17 @@ export default function Layout({ children, onSearch }: LayoutProps) {
                   >
                     <Crosshair className="w-4 h-4" />
                     Command Centre
+                  </Link>
+                  <Link
+                    to="/dossiers"
+                    className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      location.pathname === "/dossiers"
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+                    }`}
+                  >
+                    <FileText className="w-4 h-4" />
+                    Dossiers
                   </Link>
                 </>
               )}
