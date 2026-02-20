@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Eye, Phone, FileText, CheckCircle2 } from "lucide-react";
 import { VELOCITY_LEVELS, MOOD_EMOJIS } from "@/utils/velocityScoring";
+import { CHURN_RISK_COLORS } from "@/utils/churnPrediction";
 import { InterventionLogModal } from "./InterventionLogModal";
 import type { CandidateVelocity } from "@/hooks/useCommandCentre";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -64,6 +65,14 @@ export function UrgentInterventions({ candidates, onLogged }: Props) {
                 <p className="text-xs text-destructive">
                   {cv.velocity.riskFactors.join(" · ")}
                 </p>
+              )}
+
+              {cv.churnPrediction && cv.churnPrediction.probability >= 25 && (
+                <div className="flex items-center gap-2 text-xs">
+                  <span className={`font-semibold ${CHURN_RISK_COLORS[cv.churnPrediction.riskLevel].text}`}>
+                    📈 6-Week Risk: {cv.churnPrediction.probability}% ({cv.churnPrediction.riskLevel.toUpperCase()})
+                  </span>
+                </div>
               )}
 
               {cv.velocity.recommendations.length > 0 && (

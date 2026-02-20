@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateVelocity, type EngagementCheckin, type VelocityScore } from "@/utils/velocityScoring";
+import { predictChurn, type ChurnPrediction } from "@/utils/churnPrediction";
 import { startOfWeek, startOfMonth, isThisWeek, isAfter, isToday } from "date-fns";
 
 export interface CommandJourney {
@@ -41,6 +42,7 @@ export interface CommandJourney {
 export interface CandidateVelocity {
   journey: CommandJourney;
   velocity: VelocityScore;
+  churnPrediction: ChurnPrediction | null;
   checkins: EngagementCheckin[];
   latestCheckin: EngagementCheckin | null;
   journeyDay: number;
@@ -54,6 +56,7 @@ export interface PropertyStats {
   contactPhone: string | null;
   activeJourneys: number;
   atRisk: number;
+  avgChurnRisk: number;
   seventyTwoHrSuccess: number;
   ninetyDayRetention: number;
   overdueEvents: number;
@@ -162,7 +165,17 @@ export function useCommandCentre() {
     const journeyDay = startDate
       ? Math.floor((today.getTime() - new Date(startDate).getTime()) / 86400000)
       : 0;
-    return { journey: j, velocity, checkins, latestCheckin, journeyDay };
+
+    // Calculate churn prediction inline
+    const events = (j.journey_events || []).map((e) => ({
+      status: e.status,
+      scheduled_for: e.scheduled_for,
+    }));
+    const churnPrediction = checkins.length > 0
+      ? predictChurn(checkins, { start_work_date: j.start_work_date, start_date: j.start_date }, events, null, null)
+      : null;
+
+    return { journey: j, velocity, churnPrediction, checkins, latestCheckin, journeyDay };
   });
 
   // Stats
@@ -258,6 +271,14 @@ export function useCommandCentre() {
       return cv && cv.velocity.score < 50;
     }).length;
 
+    // Average churn risk for this org
+    const orgChurnPredictions = active
+      .map((j) => candidateVelocities.find((c) => c.journey.id === j.id)?.churnPrediction)
+      .filter((p): p is ChurnPrediction => !!p);
+    const avgChurnRisk = orgChurnPredictions.length > 0
+      ? Math.round(orgChurnPredictions.reduce((sum, p) => sum + p.probability, 0) / orgChurnPredictions.length)
+      : 0;
+
     propertyStats.push({
       orgId,
       orgName: org?.organization_name || "Unknown",
@@ -266,6 +287,7 @@ export function useCommandCentre() {
       contactPhone: org?.contact_phone || null,
       activeJourneys: active.length,
       atRisk: atRiskCount,
+      avgChurnRisk,
       seventyTwoHrSuccess: day3Success,
       ninetyDayRetention: retention,
       overdueEvents,

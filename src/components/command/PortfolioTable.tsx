@@ -34,11 +34,12 @@ export function PortfolioTable({ properties }: Props) {
   };
 
   const exportCsv = () => {
-    const headers = ["Property", "Active", "At Risk", "72hr %", "90-Day Retention %", "Overdue", "Last Activity"];
+    const headers = ["Property", "Active", "At Risk", "Avg Churn %", "72hr %", "90-Day Retention %", "Overdue", "Last Activity"];
     const rows = sorted.map((p) => [
       p.orgName,
       p.activeJourneys,
       p.atRisk,
+      `${p.avgChurnRisk}%`,
       `${p.seventyTwoHrSuccess}%`,
       `${p.ninetyDayRetention}%`,
       p.overdueEvents,
@@ -80,6 +81,7 @@ export function PortfolioTable({ properties }: Props) {
               <SortHeader label="Property" field="orgName" />
               <SortHeader label="Active" field="activeJourneys" />
               <SortHeader label="At Risk" field="atRisk" />
+              <SortHeader label="Avg Churn" field="avgChurnRisk" />
               <SortHeader label="72hr %" field="seventyTwoHrSuccess" />
               <SortHeader label="Retention" field="ninetyDayRetention" />
               <SortHeader label="Overdue" field="overdueEvents" />
@@ -94,6 +96,13 @@ export function PortfolioTable({ properties }: Props) {
                 <TableCell className={p.atRisk > 0 ? "text-destructive font-semibold" : ""}>
                   {p.atRisk}
                 </TableCell>
+                <TableCell className={
+                  p.avgChurnRisk >= 50 ? "text-destructive font-semibold" :
+                  p.avgChurnRisk >= 25 ? "text-warning font-semibold" :
+                  "text-success"
+                }>
+                  {p.avgChurnRisk}%
+                </TableCell>
                 <TableCell>{p.seventyTwoHrSuccess}%</TableCell>
                 <TableCell>{p.ninetyDayRetention}%</TableCell>
                 <TableCell className={p.overdueEvents > 0 ? "text-warning font-semibold" : ""}>
@@ -106,7 +115,7 @@ export function PortfolioTable({ properties }: Props) {
             ))}
             {sorted.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   No properties found
                 </TableCell>
               </TableRow>

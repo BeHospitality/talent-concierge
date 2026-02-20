@@ -4,7 +4,9 @@ import { motion } from "framer-motion";
 import { MapPin, Clock } from "lucide-react";
 import { JourneyPipelineIndicator } from "@/components/journey/JourneyPipelineIndicator";
 import { VelocityBadge } from "@/components/engagement/VelocityBadge";
+import { ChurnBadge } from "@/components/engagement/ChurnBadge";
 import { useVelocityForCandidate } from "@/hooks/useEngagementCheckins";
+import { useChurnForCandidate } from "@/hooks/useChurnPrediction";
 import { useDemoMode } from "@/contexts/DemoModeContext";
 
 interface Props {
@@ -17,6 +19,7 @@ export default function CandidateCard({ candidate, index }: Props) {
   const { isDemoMode } = useDemoMode();
   const isOnboarding = ["offer_accepted", "pre_arrival", "active"].includes(candidate.current_stage);
   const { velocity } = useVelocityForCandidate(!isDemoMode && isOnboarding ? candidate.id : undefined);
+  const { prediction: churnPrediction } = useChurnForCandidate(!isDemoMode && isOnboarding ? candidate.id : undefined);
   const isAtRisk = candidate.risk_level === "high";
   const isMedium = candidate.risk_level === "medium";
 
@@ -98,10 +101,11 @@ export default function CandidateCard({ candidate, index }: Props) {
         )}
       </div>
 
-      {/* Velocity badge for onboarding/probation candidates */}
-      {velocity && (
-        <div className="mt-2 pt-2 border-t border-border/30">
-          <VelocityBadge velocity={velocity} />
+      {/* Velocity & churn badges for onboarding/probation candidates */}
+      {(velocity || churnPrediction) && (
+        <div className="mt-2 pt-2 border-t border-border/30 flex items-center gap-2 flex-wrap">
+          {velocity && <VelocityBadge velocity={velocity} />}
+          {churnPrediction && candidate.days_in_stage >= 7 && <ChurnBadge prediction={churnPrediction} />}
         </div>
       )}
     </motion.div>
