@@ -16,8 +16,10 @@ import { PlacementRiskAlert } from "@/components/candidate/PlacementRiskAlert";
 import { JourneyTimeline } from "@/components/journey/JourneyTimeline";
 import { JourneyProgressCard } from "@/components/journey/JourneyProgressCard";
 import { useEngagementCheckins } from "@/hooks/useEngagementCheckins";
+import { useChurnPrediction } from "@/hooks/useChurnPrediction";
 import { VelocityCard } from "@/components/engagement/VelocityCard";
 import { VelocityBadge } from "@/components/engagement/VelocityBadge";
+import { ChurnPredictionCard } from "@/components/engagement/ChurnPredictionCard";
 import { EngagementChart } from "@/components/engagement/EngagementChart";
 import { MOOD_EMOJIS, MOOD_LABELS, CONFIDENCE_EMOJIS, CONFIDENCE_LABELS, TEAM_EMOJIS, TEAM_LABELS } from "@/utils/velocityScoring";
 import { TeamCompatibilityPreview } from "@/components/candidate/TeamCompatibilityPreview";
@@ -1221,6 +1223,7 @@ function NotesSection({ candidateId, isDemoMode }: { candidateId: string; isDemo
 /* ===================== ENGAGEMENT (NEW — Velocity) ===================== */
 function EngagementSectionNew({ candidateId, candidate, isDemoMode }: { candidateId: string; candidate: Candidate; isDemoMode: boolean }) {
   const { checkins, velocity, isLoading } = useEngagementCheckins(isDemoMode ? undefined : candidateId);
+  const { prediction: churnPrediction, isLoading: churnLoading } = useChurnPrediction(isDemoMode ? undefined : candidateId);
 
   // Legacy fallback for demo mode
   const score = candidate.engagement_score;
@@ -1232,6 +1235,7 @@ function EngagementSectionNew({ candidateId, candidate, isDemoMode }: { candidat
       {!isDemoMode && !isLoading && (
         <>
           <VelocityCard velocity={velocity} checkins={checkins} />
+          <ChurnPredictionCard prediction={churnPrediction} isLoading={churnLoading} />
           <EngagementChart checkins={checkins} />
 
           {/* Check-in History */}

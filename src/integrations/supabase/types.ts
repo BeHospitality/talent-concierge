@@ -683,6 +683,8 @@ export type Database = {
         Row: {
           assigned_buddy_id: string | null
           candidate_id: string | null
+          churn_prediction: Json | null
+          churn_updated_at: string | null
           created_at: string | null
           current_phase: string
           day_90_date: string | null
@@ -697,6 +699,8 @@ export type Database = {
         Insert: {
           assigned_buddy_id?: string | null
           candidate_id?: string | null
+          churn_prediction?: Json | null
+          churn_updated_at?: string | null
           created_at?: string | null
           current_phase?: string
           day_90_date?: string | null
@@ -711,6 +715,8 @@ export type Database = {
         Update: {
           assigned_buddy_id?: string | null
           candidate_id?: string | null
+          churn_prediction?: Json | null
+          churn_updated_at?: string | null
           created_at?: string | null
           current_phase?: string
           day_90_date?: string | null
