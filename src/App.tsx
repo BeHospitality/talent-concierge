@@ -13,8 +13,11 @@ import Organizations from "./pages/Organizations";
 import Settings from "./pages/Settings";
 import JourneyDashboard from "./pages/JourneyDashboard";
 import CommandCentre from "./pages/CommandCentre";
+import AdminDossiers from "./pages/AdminDossiers";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import InsightsLogin from "./pages/InsightsLogin";
+import InsightsReport from "./pages/InsightsReport";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +45,7 @@ function ProtectedRoutes() {
         <Route path="/organizations" element={<Organizations />} />
         <Route path="/journeys" element={<JourneyDashboard />} />
         <Route path="/command-centre" element={isAdmin ? <CommandCentre /> : <Navigate to="/" replace />} />
+        <Route path="/dossiers" element={isAdmin ? <AdminDossiers /> : <Navigate to="/" replace />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -65,6 +69,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
+            <Route path="/insights/:accessCode" element={<InsightsLogin />} />
+            <Route path="/insights/:accessCode/report" element={<InsightsReport />} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
         </BrowserRouter>

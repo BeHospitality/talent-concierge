@@ -626,6 +626,65 @@ export type Database = {
           },
         ]
       }
+      insight_reports: {
+        Row: {
+          access_code: string
+          created_at: string | null
+          first_viewed_at: string | null
+          id: string
+          manager_email: string | null
+          manager_name: string
+          organization_id: string | null
+          pin: string
+          property_name: string
+          published_at: string | null
+          report_data: Json
+          status: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          access_code: string
+          created_at?: string | null
+          first_viewed_at?: string | null
+          id?: string
+          manager_email?: string | null
+          manager_name: string
+          organization_id?: string | null
+          pin: string
+          property_name: string
+          published_at?: string | null
+          report_data?: Json
+          status?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          access_code?: string
+          created_at?: string | null
+          first_viewed_at?: string | null
+          id?: string
+          manager_email?: string | null
+          manager_name?: string
+          organization_id?: string | null
+          pin?: string
+          property_name?: string
+          published_at?: string | null
+          report_data?: Json
+          status?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insight_reports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interventions: {
         Row: {
           candidate_id: string
