@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,27 +6,40 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { useCandidates, type CandidateInsert } from "@/hooks/useCandidates";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   trigger?: React.ReactNode;
 }
 
+const emptyForm = {
+  full_name: "",
+  email: "",
+  phone: "",
+  current_location: "",
+  desired_location: "",
+  referral_source: "",
+};
+
 export default function AddCandidateDialog({ trigger }: Props) {
   const [open, setOpen] = useState(false);
   const { createCandidate, isCreating } = useCandidates();
-  const [form, setForm] = useState<CandidateInsert>({
-    full_name: "",
-    email: "",
-    phone: "",
-    current_location: "",
-    desired_location: "",
-    referral_source: "",
-  });
+  const [orgId, setOrgId] = useState<string>("");
+  const [form, setForm] = useState<CandidateInsert>({ ...emptyForm, organization_id: "" });
+
+  useEffect(() => {
+    supabase.rpc("get_user_org_id").then(({ data }) => {
+      if (data) {
+        setOrgId(data);
+        setForm(f => ({ ...f, organization_id: data }));
+      }
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await createCandidate(form);
-    setForm({ full_name: "", email: "", phone: "", current_location: "", desired_location: "", referral_source: "" });
+    setForm({ ...emptyForm, organization_id: orgId });
     setOpen(false);
   };
 
