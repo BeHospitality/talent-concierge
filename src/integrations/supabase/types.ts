@@ -78,6 +78,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "assessment_links_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "assessment_links_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -154,6 +161,13 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: true
             referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buddy_assignments_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: true
+            referencedRelation: "candidates_safe"
             referencedColumns: ["id"]
           },
           {
@@ -282,6 +296,13 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: false
             referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkin_responses_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
             referencedColumns: ["id"]
           },
           {
@@ -445,6 +466,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "dossiers_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "dossiers_hiring_manager_id_fkey"
             columns: ["hiring_manager_id"]
             isOneToOne: false
@@ -491,6 +519,13 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: false
             referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagement_activities_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
             referencedColumns: ["id"]
           },
           {
@@ -560,6 +595,13 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: false
             referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagement_checkins_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
             referencedColumns: ["id"]
           },
           {
@@ -731,6 +773,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "interventions_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "interventions_journey_id_fkey"
             columns: ["journey_id"]
             isOneToOne: false
@@ -798,6 +847,13 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: false
             referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interviews_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
             referencedColumns: ["id"]
           },
           {
@@ -871,6 +927,13 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: false
             referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_blueprints_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
             referencedColumns: ["id"]
           },
           {
@@ -1003,6 +1066,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "logistics_checklist_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "logistics_checklist_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -1048,6 +1118,13 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: false
             referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
             referencedColumns: ["id"]
           },
           {
@@ -1177,6 +1254,13 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: true
             referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: true
+            referencedRelation: "candidates_safe"
             referencedColumns: ["id"]
           },
           {
@@ -1332,6 +1416,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "placement_risks_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "placement_risks_target_organization_id_fkey"
             columns: ["target_organization_id"]
             isOneToOne: false
@@ -1393,6 +1484,13 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: true
             referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescreening_data_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: true
+            referencedRelation: "candidates_safe"
             referencedColumns: ["id"]
           },
           {
@@ -1551,6 +1649,56 @@ export type Database = {
       }
     }
     Views: {
+      candidates_safe: {
+        Row: {
+          created_at: string | null
+          current_stage: Database["public"]["Enums"]["candidate_stage"] | null
+          days_in_stage: number | null
+          engagement_score: number | null
+          full_name: string | null
+          id: string | null
+          organization_id: string | null
+          prescreening_complete: boolean | null
+          referral_source: string | null
+          risk_level: Database["public"]["Enums"]["risk_level"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_stage?: Database["public"]["Enums"]["candidate_stage"] | null
+          days_in_stage?: number | null
+          engagement_score?: number | null
+          full_name?: string | null
+          id?: string | null
+          organization_id?: string | null
+          prescreening_complete?: boolean | null
+          referral_source?: string | null
+          risk_level?: Database["public"]["Enums"]["risk_level"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_stage?: Database["public"]["Enums"]["candidate_stage"] | null
+          days_in_stage?: number | null
+          engagement_score?: number | null
+          full_name?: string | null
+          id?: string | null
+          organization_id?: string | null
+          prescreening_complete?: boolean | null
+          referral_source?: string | null
+          risk_level?: Database["public"]["Enums"]["risk_level"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_insight_reports: {
         Row: {
           access_code: string | null
