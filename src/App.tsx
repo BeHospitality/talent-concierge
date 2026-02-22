@@ -10,6 +10,7 @@ import Layout from "@/components/Layout";
 import Index from "./pages/Index";
 import CandidateProfile from "./pages/CandidateProfile";
 import Organizations from "./pages/Organizations";
+import OrganizationDetail from "./pages/OrganizationDetail";
 import Settings from "./pages/Settings";
 import JourneyDashboard from "./pages/JourneyDashboard";
 import CommandCentre from "./pages/CommandCentre";
@@ -43,6 +44,7 @@ function ProtectedRoutes() {
         <Route path="/" element={<Index />} />
         <Route path="/candidate/:id" element={<CandidateProfile />} />
         <Route path="/organizations" element={<Organizations />} />
+        <Route path="/organizations/:id" element={<OrganizationDetail />} />
         <Route path="/journeys" element={<JourneyDashboard />} />
         <Route path="/command-centre" element={isAdmin ? <CommandCentre /> : <Navigate to="/" replace />} />
         <Route path="/dossiers" element={isAdmin ? <AdminDossiers /> : <Navigate to="/" replace />} />
