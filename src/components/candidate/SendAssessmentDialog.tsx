@@ -69,11 +69,14 @@ Be Connect`;
 
   const sendMutation = useMutation({
     mutationFn: async (via: string) => {
+      // Get current user's org_id for RLS compliance
+      const { data: orgData } = await supabase.rpc("get_user_org_id");
       const { error } = await supabase.from("assessment_links").insert({
         candidate_id: candidateId,
         token,
         assessment_url: assessmentUrl,
         sent_via: via,
+        organization_id: orgData!,
       });
       if (error) throw error;
     },

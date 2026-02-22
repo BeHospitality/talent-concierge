@@ -31,7 +31,7 @@ export interface CandidateInsert {
   current_location?: string;
   desired_location?: string;
   referral_source?: string;
-  organization_id?: string;
+  organization_id: string;
 }
 
 export function useCandidates() {

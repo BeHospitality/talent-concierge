@@ -15,14 +15,14 @@ export default function InsightsLogin() {
   const [verifying, setVerifying] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  // Use the public view (no PIN exposed) for display data only
   const { data: dossier, isLoading, error: fetchError } = useQuery({
     queryKey: ["insight_report_login", accessCode],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("insight_reports")
-        .select("id, property_name, manager_name, pin, status, created_at")
+        .from("public_insight_reports")
+        .select("id, property_name, manager_name, status, created_at")
         .eq("access_code", accessCode!)
-        .eq("status", "published")
         .single();
       if (error) throw error;
       return data;
@@ -59,20 +59,14 @@ export default function InsightsLogin() {
     const entered = pin.join("");
     setVerifying(true);
 
-    if (entered === dossier.pin) {
-      // Track view
-      const isFirst = !dossier.status; // we'll update via supabase
-      await supabase
-        .from("insight_reports")
-        .update({
-          first_viewed_at: dossier.id ? new Date().toISOString() : undefined,
-          view_count: (dossier as any).view_count ? (dossier as any).view_count + 1 : 1,
-        })
-        .eq("id", dossier.id);
+    // Use RPC to verify PIN server-side — PIN never leaves the database
+    const { data: rawResult, error: rpcError } = await supabase.rpc("verify_insight_pin", {
+      p_access_code: accessCode!,
+      p_pin: entered,
+    });
+    const result = rawResult as { valid: boolean; id: string | null } | null;
 
-      localStorage.setItem(`insight_${accessCode}`, JSON.stringify({ id: dossier.id, ts: Date.now() }));
-      navigate(`/insights/${accessCode}/report`);
-    } else {
+    if (rpcError || !result?.valid) {
       const next = attempts + 1;
       setAttempts(next);
       setPin(["", "", "", ""]);
@@ -82,6 +76,18 @@ export default function InsightsLogin() {
       } else {
         setError(`Incorrect PIN. ${3 - next} attempt${3 - next > 1 ? "s" : ""} remaining.`);
       }
+    } else {
+      // Track view
+      await supabase
+        .from("insight_reports")
+        .update({
+          first_viewed_at: new Date().toISOString(),
+          view_count: (dossier as any).view_count ? (dossier as any).view_count + 1 : 1,
+        })
+        .eq("id", result.id);
+
+      localStorage.setItem(`insight_${accessCode}`, JSON.stringify({ id: result.id, ts: Date.now() }));
+      navigate(`/insights/${accessCode}/report`);
     }
     setVerifying(false);
   };
