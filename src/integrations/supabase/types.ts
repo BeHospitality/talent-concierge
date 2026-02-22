@@ -40,7 +40,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
-          organization_id: string | null
+          organization_id: string
           sent_at: string
           sent_via: string
           token: string
@@ -52,7 +52,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          organization_id?: string | null
+          organization_id: string
           sent_at?: string
           sent_via?: string
           token: string
@@ -64,7 +64,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          organization_id?: string | null
+          organization_id?: string
           sent_at?: string
           sent_via?: string
           token?: string
@@ -178,7 +178,7 @@ export type Database = {
           id: string
           last_contact_date: string | null
           next_checkin_date: string | null
-          organization_id: string | null
+          organization_id: string
           phone: string | null
           photo_url: string | null
           prescreening_complete: boolean
@@ -200,7 +200,7 @@ export type Database = {
           id?: string
           last_contact_date?: string | null
           next_checkin_date?: string | null
-          organization_id?: string | null
+          organization_id: string
           phone?: string | null
           photo_url?: string | null
           prescreening_complete?: boolean
@@ -222,7 +222,7 @@ export type Database = {
           id?: string
           last_contact_date?: string | null
           next_checkin_date?: string | null
-          organization_id?: string | null
+          organization_id?: string
           phone?: string | null
           photo_url?: string | null
           prescreening_complete?: boolean
@@ -249,7 +249,7 @@ export type Database = {
           concerns: string | null
           id: string
           needs_help: string | null
-          organization_id: string | null
+          organization_id: string
           responded_at: string | null
           response_received: boolean
           still_excited: boolean | null
@@ -260,7 +260,7 @@ export type Database = {
           concerns?: string | null
           id?: string
           needs_help?: string | null
-          organization_id?: string | null
+          organization_id: string
           responded_at?: string | null
           response_received?: boolean
           still_excited?: boolean | null
@@ -271,7 +271,7 @@ export type Database = {
           concerns?: string | null
           id?: string
           needs_help?: string | null
-          organization_id?: string | null
+          organization_id?: string
           responded_at?: string | null
           response_received?: boolean
           still_excited?: boolean | null
@@ -514,7 +514,7 @@ export type Database = {
           journey_id: string
           mood: number
           notes: string | null
-          organization_id: string | null
+          organization_id: string
           phase: string
           recorded_by: string
           team_integration: number | null
@@ -531,7 +531,7 @@ export type Database = {
           journey_id: string
           mood: number
           notes?: string | null
-          organization_id?: string | null
+          organization_id: string
           phase: string
           recorded_by?: string
           team_integration?: number | null
@@ -548,7 +548,7 @@ export type Database = {
           journey_id?: string
           mood?: number
           notes?: string | null
-          organization_id?: string | null
+          organization_id?: string
           phase?: string
           recorded_by?: string
           team_integration?: number | null
@@ -593,7 +593,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
-          organization_id: string | null
+          organization_id: string
           phone: string | null
         }
         Insert: {
@@ -603,7 +603,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
-          organization_id?: string | null
+          organization_id: string
           phone?: string | null
         }
         Update: {
@@ -613,7 +613,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
-          organization_id?: string | null
+          organization_id?: string
           phone?: string | null
         }
         Relationships: [
@@ -694,7 +694,7 @@ export type Database = {
           intervention_type: string
           journey_id: string | null
           logged_by: string
-          organization_id: string | null
+          organization_id: string
           outcome: string | null
           summary: string
         }
@@ -706,7 +706,7 @@ export type Database = {
           intervention_type: string
           journey_id?: string | null
           logged_by: string
-          organization_id?: string | null
+          organization_id: string
           outcome?: string | null
           summary: string
         }
@@ -718,7 +718,7 @@ export type Database = {
           intervention_type?: string
           journey_id?: string | null
           logged_by?: string
-          organization_id?: string | null
+          organization_id?: string
           outcome?: string | null
           summary?: string
         }
@@ -1124,7 +1124,7 @@ export type Database = {
           job_title: string
           negotiation_log: Json | null
           offer_letter_url: string | null
-          organization_id: string | null
+          organization_id: string
           salary: number | null
           signature_data: string | null
           signature_date: string | null
@@ -1143,7 +1143,7 @@ export type Database = {
           job_title: string
           negotiation_log?: Json | null
           offer_letter_url?: string | null
-          organization_id?: string | null
+          organization_id: string
           salary?: number | null
           signature_data?: string | null
           signature_date?: string | null
@@ -1162,7 +1162,7 @@ export type Database = {
           job_title?: string
           negotiation_log?: Json | null
           offer_letter_url?: string | null
-          organization_id?: string | null
+          organization_id?: string
           salary?: number | null
           signature_data?: string | null
           signature_date?: string | null
@@ -1348,7 +1348,7 @@ export type Database = {
           career_compass_url: string | null
           completed_at: string | null
           id: string
-          organization_id: string | null
+          organization_id: string
           retention_risk_windows: Json | null
           six_month_checkin_date: string | null
           tribe_viral_archetype: Database["public"]["Enums"]["archetype"] | null
@@ -1362,7 +1362,7 @@ export type Database = {
           career_compass_url?: string | null
           completed_at?: string | null
           id?: string
-          organization_id?: string | null
+          organization_id: string
           retention_risk_windows?: Json | null
           six_month_checkin_date?: string | null
           tribe_viral_archetype?:
@@ -1378,7 +1378,7 @@ export type Database = {
           career_compass_url?: string | null
           completed_at?: string | null
           id?: string
-          organization_id?: string | null
+          organization_id?: string
           retention_risk_windows?: Json | null
           six_month_checkin_date?: string | null
           tribe_viral_archetype?:
@@ -1488,7 +1488,7 @@ export type Database = {
           full_name: string
           id: string
           is_available_as_buddy: boolean
-          organization_id: string | null
+          organization_id: string
           photo_url: string | null
           role: string
           tribe_viral_archetype: Database["public"]["Enums"]["archetype"] | null
@@ -1500,7 +1500,7 @@ export type Database = {
           full_name: string
           id?: string
           is_available_as_buddy?: boolean
-          organization_id?: string | null
+          organization_id: string
           photo_url?: string | null
           role: string
           tribe_viral_archetype?:
@@ -1514,7 +1514,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_available_as_buddy?: boolean
-          organization_id?: string | null
+          organization_id?: string
           photo_url?: string | null
           role?: string
           tribe_viral_archetype?:
@@ -1551,7 +1551,62 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_insight_reports: {
+        Row: {
+          access_code: string | null
+          created_at: string | null
+          first_viewed_at: string | null
+          id: string | null
+          manager_email: string | null
+          manager_name: string | null
+          organization_id: string | null
+          property_name: string | null
+          published_at: string | null
+          report_data: Json | null
+          status: string | null
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          access_code?: string | null
+          created_at?: string | null
+          first_viewed_at?: string | null
+          id?: string | null
+          manager_email?: string | null
+          manager_name?: string | null
+          organization_id?: string | null
+          property_name?: string | null
+          published_at?: string | null
+          report_data?: Json | null
+          status?: string | null
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          access_code?: string | null
+          created_at?: string | null
+          first_viewed_at?: string | null
+          id?: string | null
+          manager_email?: string | null
+          manager_name?: string | null
+          organization_id?: string | null
+          property_name?: string | null
+          published_at?: string | null
+          report_data?: Json | null
+          status?: string | null
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insight_reports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_user_org_id: { Args: never; Returns: string }
@@ -1561,6 +1616,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      verify_insight_pin: {
+        Args: { p_access_code: string; p_pin: string }
+        Returns: Json
       }
     }
     Enums: {
