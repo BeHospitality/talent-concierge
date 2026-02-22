@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { mockCandidates, STAGE_LABELS, type Candidate } from "@/data/mockData";
 import { useDemoMode } from "@/contexts/DemoModeContext";
@@ -912,7 +913,7 @@ function OfferSection({ candidateId, isDemoMode }: { candidateId: string; isDemo
       <Dialog open={letterOpen} onOpenChange={setLetterOpen}>
         <DialogContent className="bg-card border-border/50 max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Offer Letter Preview</DialogTitle></DialogHeader>
-          <div className="border rounded-lg bg-background p-2" dangerouslySetInnerHTML={{ __html: letterHtml }} />
+          <div className="border rounded-lg bg-background p-2" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(letterHtml) }} />
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setLetterOpen(false)}>Close</Button>
             <Button variant="outline" className="gap-2" onClick={() => {
