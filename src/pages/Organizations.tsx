@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useDemoMode } from "@/contexts/DemoModeContext";
 import { mockOrganizations } from "@/data/mockData";
 import { motion } from "framer-motion";
-import { Building2, Plus, Users, Download } from "lucide-react";
+import { Building2, Plus, Users, Download, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -16,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Organizations() {
   const { isDemoMode } = useDemoMode();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState({ organization_name: "", org_code: "", contact_name: "", contact_email: "", status: "prospect" as string });
@@ -133,10 +135,11 @@ export default function Organizations() {
               <th className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-6 py-3">Status</th>
               <th className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-6 py-3">Candidates</th>
               {isDemoMode && <th className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-6 py-3">Health</th>}
+              <th className="w-10"></th>
             </tr></thead>
             <tbody>
               {orgs.map((org: any, i: number) => (
-                <motion.tr key={org.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }} className="border-b border-border/30 hover:bg-accent/30 transition-colors cursor-pointer">
+                <motion.tr key={org.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }} className="border-b border-border/30 hover:bg-accent/30 transition-colors cursor-pointer group" onClick={() => navigate(`/organizations/${org.id}`)}>
               <td className="px-6 py-4"><div className="flex items-center gap-3"><Building2 className="w-5 h-5 text-primary" /><span className="font-medium text-sm">{org.organization_name}</span></div></td>
                   <td className="px-6 py-4 text-sm text-muted-foreground font-mono">{org.org_code}</td>
                   <td className="px-6 py-4"><p className="text-sm">{org.contact_name}</p><p className="text-xs text-muted-foreground">{org.contact_email}</p></td>
@@ -145,6 +148,9 @@ export default function Organizations() {
                   {isDemoMode && (org as any).health_score != null && (
                     <td className="px-6 py-4"><span className="text-sm font-semibold">{(org as any).health_score}/100</span></td>
                   )}
+                  <td className="px-4 py-4">
+                    <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </td>
                 </motion.tr>
               ))}
             </tbody>
