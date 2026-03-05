@@ -88,7 +88,7 @@ const avatars = [
   "https://api.dicebear.com/7.x/personas/svg?seed=jamesoconnor",
 ];
 
-// ─── Kilkea Castle Demo Team Members ──────────────────────────
+// ─── Ashford Manor Demo Team Members ──────────────────────────
 export const mockTeamMembers: DemoTeamMember[] = [
   {
     id: "tm1",
@@ -119,7 +119,7 @@ export const mockTeamMembers: DemoTeamMember[] = [
   },
 ];
 
-// ─── Kilkea Castle Demo Candidates ────────────────────────────
+// ─── Ashford Manor Demo Candidates ────────────────────────────
 export const mockCandidates: Candidate[] = [
   {
     id: "c1",
@@ -197,14 +197,14 @@ export const mockCandidates: Candidate[] = [
   },
 ];
 
-// ─── Kilkea Castle Demo Organization ──────────────────────────
+// ─── Ashford Manor Demo Organization ──────────────────────────
 export const mockOrganizations: Organization[] = [
   {
     id: "o1",
-    organization_name: "Kilkea Castle Hotel",
-    org_code: "kilkea-castle",
-    contact_name: "Fiona Brennan",
-    contact_email: "fiona@kilkeacastle.ie",
+    organization_name: "Ashford Manor Hotel",
+    org_code: "ashford-manor",
+    contact_name: "Claire Hennessy",
+    contact_email: "manager@ashfordmanor.demo",
     status: "client",
     candidates_linked: 3,
     health_score: 55,

@@ -139,7 +139,7 @@ export default function CandidateProfile() {
     }
   };
 
-  const orgName = isDemoMode ? "Kilkea Castle Hotel" : undefined;
+  const orgName = isDemoMode ? "Ashford Manor Hotel" : undefined;
 
   return (
     <div className="max-w-[1600px] mx-auto">
@@ -366,9 +366,9 @@ function VideoProfileSection({ candidateId, isDemoMode }: { candidateId: string;
 
   const clips: VideoClip[] = isDemoMode
     ? [
-        { id: "demo1", title: "Introduction", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", uploaded_at: "2026-02-10T10:00:00Z" },
-        { id: "demo2", title: "Why Hospitality?", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", uploaded_at: "2026-02-09T14:00:00Z" },
-        { id: "demo3", title: "Skills Demo — Plating", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", uploaded_at: "2026-02-08T09:00:00Z" },
+        { id: "demo1", title: "Introduction", url: "demo-placeholder", uploaded_at: "2026-02-10T10:00:00Z" },
+        { id: "demo2", title: "Why Hospitality?", url: "demo-placeholder", uploaded_at: "2026-02-09T14:00:00Z" },
+        { id: "demo3", title: "Skills Demo — Plating", url: "demo-placeholder", uploaded_at: "2026-02-08T09:00:00Z" },
       ]
     : ((candidateData?.video_clips as unknown as VideoClip[]) || []);
 
@@ -484,8 +484,14 @@ function VideoProfileSection({ candidateId, isDemoMode }: { candidateId: string;
             const isDirect = clip.url.match(/\.(mp4|webm|ogg)(\?|$)/i);
             return (
               <motion.div key={clip.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="rounded-lg border border-border/50 overflow-hidden bg-muted/20">
-                <div className="aspect-video bg-black relative">
-                  {isDirect ? (
+                <div className="aspect-video relative" style={{ background: '#0f1729' }}>
+                  {clip.url === "demo-placeholder" ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                      <Video className="w-10 h-10 text-white/40" />
+                      <p className="text-sm font-semibold text-white/70">Video Profile — Candidate Submission</p>
+                      <p className="text-xs text-white/40">Demo mode — actual candidate videos visible to Charter Partners only</p>
+                    </div>
+                  ) : isDirect ? (
                     <video src={embedUrl || clip.url} controls className="w-full h-full object-contain" />
                   ) : embedUrl ? (
                     <iframe src={embedUrl} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
