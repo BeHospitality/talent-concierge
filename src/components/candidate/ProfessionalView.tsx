@@ -104,7 +104,7 @@ export function ProfessionalView() {
             {/* Header */}
             <div className="text-center py-6">
               <p className="text-lg font-bold" style={{ color: GOLD }}>Be Connect</p>
-              <p className="text-white text-base font-semibold mt-2">Your Kilkea Castle Journey</p>
+              <p className="text-white text-base font-semibold mt-2">Your Ashford Manor Journey</p>
               <p className="text-white/80 text-sm mt-1">Welcome, James 👋</p>
               <span
                 className="inline-block mt-3 text-xs font-semibold px-4 py-1.5 rounded-full"
@@ -117,7 +117,7 @@ export function ProfessionalView() {
             {/* Card 1: Welcome Video */}
             <PhoneCard delay={0.1}>
               <p className="text-white font-semibold text-sm mb-1">A message for you</p>
-              <p className="text-white/60 text-xs mb-3">From Aidan O'Sullivan, General Manager</p>
+              <p className="text-white/60 text-xs mb-3">From Aidan O'Brien, General Manager</p>
               <div
                 className="relative rounded-xl overflow-hidden flex items-center justify-center cursor-pointer group"
                 style={{ background: "#001530", height: 180 }}
@@ -145,7 +145,7 @@ export function ProfessionalView() {
                 </div>
                 <div>
                   <p className="text-white text-sm font-medium">Tom Burke</p>
-                  <p className="text-white/60 text-xs">FOH Supervisor • 5 Years at Kilkea</p>
+                  <p className="text-white/60 text-xs">FOH Supervisor • 5 Years at Ashford Manor</p>
                 </div>
               </div>
               <span className="inline-block text-xs px-3 py-1 rounded-full mb-2" style={{ background: `${GOLD}20`, color: GOLD }}>
@@ -169,14 +169,14 @@ export function ProfessionalView() {
 
             {/* Card 3: Breaking of Bread */}
             <PhoneCard delay={0.3}>
-              <p className="text-white font-semibold text-sm mb-2">🎁 A Welcome Gift from Kilkea</p>
+              <p className="text-white font-semibold text-sm mb-2">🎁 A Welcome Gift from Ashford Manor</p>
               <p className="text-white/70 text-xs mb-4">
                 Before your first shift, we'd love to welcome you properly.
               </p>
               <div className="space-y-3 mb-4">
                 {[
-                  { id: "dinner", emoji: "🍽️", title: "Dinner for Two", desc: "Complimentary dinner at our Castle Restaurant for you and a guest" },
-                  { id: "stay", emoji: "🏰", title: "Castle Overnight Stay", desc: "One night in our Castle accommodation with breakfast" },
+                  { id: "dinner", emoji: "🍽️", title: "Dinner for Two", desc: "Complimentary dinner at our Manor Restaurant for you and a guest" },
+                  { id: "stay", emoji: "🏰", title: "Manor Overnight Stay", desc: "One night in our Manor accommodation with breakfast" },
                 ].map((opt) => (
                   <button
                     key={opt.id}
@@ -207,7 +207,7 @@ export function ProfessionalView() {
 
             {/* Card 4: First Week */}
             <PhoneCard delay={0.4}>
-              <p className="text-white font-semibold text-sm mb-3">📅 Week 1 at Kilkea</p>
+              <p className="text-white font-semibold text-sm mb-3">📅 Week 1 at Ashford Manor</p>
               <div className="space-y-2.5">
                 {[
                   { day: "Mon 3 Mar", done: true, text: "Induction Day with Aidan (9am-1pm)" },
@@ -260,11 +260,11 @@ export function ProfessionalView() {
 
             {/* Card 6: Legacy Path */}
             <PhoneCard delay={0.6}>
-              <p className="text-white font-semibold text-sm mb-4">🌟 Your Journey at Kilkea</p>
+              <p className="text-white font-semibold text-sm mb-4">🌟 Your Journey at Ashford Manor</p>
               <div className="space-y-5 relative ml-3">
                 <div className="absolute left-[5px] top-2 bottom-2 w-px" style={{ background: `${GOLD}40` }} />
                 {[
-                  { year: "NOW", title: "Sous Chef", desc: "Join the Kilkea kitchen family", active: true },
+                  { year: "NOW", title: "Sous Chef", desc: "Join the Ashford Manor kitchen", active: true },
                   { year: "YEAR 1", title: "Senior Sous Chef", desc: "Own your section. Lead preparation." },
                   { year: "YEAR 2", title: "Chef de Partie / Head of Section", desc: "Full creative ownership of your area" },
                   { year: "YEAR 3 ⭐", title: "Head Chef", desc: "Lead the entire kitchen operation" },
