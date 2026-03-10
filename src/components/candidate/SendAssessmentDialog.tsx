@@ -92,7 +92,38 @@ Be Connect`;
       const orgCode = orgRow?.org_code;
       if (!orgCode) throw new Error("Could not determine organization code.");
 
-      // Insert into assessment_links (Hub tracking)
+      // Register token with DNA app's edge function (must succeed before Hub insert)
+      const dnaEdgeFunctionUrl = "https://bxngkvmdvziaxxkbuwia.supabase.co/functions/v1/register-magic-link";
+      const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      try {
+        console.log("Registering token with DNA app...");
+        const dnaResponse = await fetch(dnaEdgeFunctionUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            candidate_email: candidateEmail,
+            candidate_name: candidateName,
+            org_code: orgCode,
+            expire_at: expireAt.toISOString(),
+          }),
+        });
+
+        if (!dnaResponse.ok) {
+          const errorData = await dnaResponse.json().catch(() => ({ error: "Unknown error" }));
+          console.error("DNA registration failed:", dnaResponse.status, errorData);
+          throw new Error(`Failed to register with DNA: ${errorData.error || "Unknown error"}`);
+        }
+
+        const dnaData = await dnaResponse.json();
+        console.log("Token registered with DNA successfully:", dnaData);
+      } catch (dnaError) {
+        console.error("Failed to register token with DNA app:", dnaError);
+        throw new Error("Could not register assessment with DNA app. Please try again.");
+      }
+
+      // Insert into assessment_links (Hub tracking) — only after DNA registration succeeds
       const { error } = await supabase.from("assessment_links").insert({
         candidate_id: candidateId,
         token,
@@ -101,18 +132,6 @@ Be Connect`;
         organization_id: orgId,
       });
       if (error) throw error;
-
-      // Insert into magic_links (DNA app reads this to validate tokens)
-      const { error: mlError } = await supabase.from("magic_links" as any).insert({
-        token,
-        org_code: orgCode,
-        candidate_name: candidateName,
-        candidate_email: candidateEmail,
-      });
-      if (mlError) {
-        console.error("Failed to create magic link:", mlError);
-        // Don't fail the whole operation — assessment_links was already created
-      }
     },
     onSuccess: (_, via) => {
       queryClient.invalidateQueries({ queryKey: ["assessment_links", candidateId] });
