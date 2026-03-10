@@ -69,14 +69,25 @@ Be Connect`;
 
   const sendMutation = useMutation({
     mutationFn: async (via: string) => {
-      // Get current user's org_id for RLS compliance
+      // Get org_id: try user's profile first, fall back to candidate's org
+      let orgId: string | null = null;
       const { data: orgData } = await supabase.rpc("get_user_org_id");
+      orgId = orgData;
+      if (!orgId) {
+        const { data: cand } = await supabase
+          .from("candidates")
+          .select("organization_id")
+          .eq("id", candidateId)
+          .single();
+        orgId = cand?.organization_id ?? null;
+      }
+      if (!orgId) throw new Error("Could not determine organization for this candidate.");
       const { error } = await supabase.from("assessment_links").insert({
         candidate_id: candidateId,
         token,
         assessment_url: assessmentUrl,
         sent_via: via,
-        organization_id: orgData!,
+        organization_id: orgId,
       });
       if (error) throw error;
     },
