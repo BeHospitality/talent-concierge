@@ -32,7 +32,7 @@ export function SendAssessmentDialog({
   const queryClient = useQueryClient();
 
   const token = crypto.randomUUID().slice(0, 12);
-  const assessmentUrl = `tribe.be.ie/assess?token=${token}`;
+  const assessmentUrl = `https://be-connect-dna.be.ie/assess?token=${token}`;
   const managerName = "Your Concierge";
 
   const defaultMessage = `Hi ${candidateName},
