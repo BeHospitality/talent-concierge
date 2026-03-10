@@ -24,6 +24,7 @@ const emptyForm = {
 export default function AddCandidateDialog({ trigger }: Props) {
   const [open, setOpen] = useState(false);
   const { createCandidate, isCreating } = useCandidates();
+  const { toast } = useToast();
   const [orgId, setOrgId] = useState<string>("");
   const [form, setForm] = useState<CandidateInsert>({ ...emptyForm, organization_id: "" });
 
