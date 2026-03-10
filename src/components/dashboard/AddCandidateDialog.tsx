@@ -38,8 +38,19 @@ export default function AddCandidateDialog({ trigger }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createCandidate(form);
-    setForm({ ...emptyForm, organization_id: orgId });
+    let currentOrgId = orgId;
+    if (!currentOrgId) {
+      const { data } = await supabase.rpc("get_user_org_id");
+      if (data) {
+        currentOrgId = data;
+        setOrgId(data);
+      }
+    }
+    if (!currentOrgId) {
+      return;
+    }
+    await createCandidate({ ...form, organization_id: currentOrgId });
+    setForm({ ...emptyForm, organization_id: currentOrgId });
     setOpen(false);
   };
 
