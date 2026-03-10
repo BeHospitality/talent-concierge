@@ -82,6 +82,17 @@ Be Connect`;
         orgId = cand?.organization_id ?? null;
       }
       if (!orgId) throw new Error("Could not determine organization for this candidate.");
+
+      // Get org_code for the magic_links table (DNA app needs this)
+      const { data: orgRow } = await supabase
+        .from("organizations")
+        .select("org_code")
+        .eq("id", orgId)
+        .single();
+      const orgCode = orgRow?.org_code;
+      if (!orgCode) throw new Error("Could not determine organization code.");
+
+      // Insert into assessment_links (Hub tracking)
       const { error } = await supabase.from("assessment_links").insert({
         candidate_id: candidateId,
         token,
@@ -90,6 +101,18 @@ Be Connect`;
         organization_id: orgId,
       });
       if (error) throw error;
+
+      // Insert into magic_links (DNA app reads this to validate tokens)
+      const { error: mlError } = await supabase.from("magic_links" as any).insert({
+        token,
+        org_code: orgCode,
+        candidate_name: candidateName,
+        candidate_email: candidateEmail,
+      });
+      if (mlError) {
+        console.error("Failed to create magic link:", mlError);
+        // Don't fail the whole operation — assessment_links was already created
+      }
     },
     onSuccess: (_, via) => {
       queryClient.invalidateQueries({ queryKey: ["assessment_links", candidateId] });
