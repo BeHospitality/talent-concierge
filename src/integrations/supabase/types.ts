@@ -1081,6 +1081,45 @@ export type Database = {
           },
         ]
       }
+      magic_links: {
+        Row: {
+          assessment_id: string | null
+          candidate_email: string | null
+          candidate_name: string | null
+          created_at: string
+          expire_at: string | null
+          id: string
+          org_code: string
+          token: string
+          used: boolean
+          used_at: string | null
+        }
+        Insert: {
+          assessment_id?: string | null
+          candidate_email?: string | null
+          candidate_name?: string | null
+          created_at?: string
+          expire_at?: string | null
+          id?: string
+          org_code: string
+          token?: string
+          used?: boolean
+          used_at?: string | null
+        }
+        Update: {
+          assessment_id?: string | null
+          candidate_email?: string | null
+          candidate_name?: string | null
+          created_at?: string
+          expire_at?: string | null
+          id?: string
+          org_code?: string
+          token?: string
+          used?: boolean
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           author: string
