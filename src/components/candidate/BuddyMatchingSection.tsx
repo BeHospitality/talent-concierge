@@ -173,7 +173,7 @@ export function BuddyMatchingSection({ candidateId, candidateArchetype, organiza
     },
   });
 
-  const team = isDemoMode ? DEMO_TEAM : (teamMembers.length > 0 ? teamMembers : DEMO_TEAM);
+  const team = isDemoMode ? DEMO_TEAM : teamMembers;
 
   // Calculate scored recommendations
   const recommendations = team
