@@ -201,33 +201,36 @@ export function PreScreeningSection({ candidate, isDemoMode, onUpdate }: PreScre
         </div>
       )}
 
-      {/* Career Compass */}
-      <div className="bg-card rounded-xl border border-border/50 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Career Compass</h2>
-          <Button variant="ghost" size="sm" className="gap-1 text-primary">
-            <ExternalLink className="w-3.5 h-3.5" /> View Full Roadmap
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {milestones.map((milestone, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className={`rounded-lg p-4 ${i === 0 ? "bg-primary/10 border border-primary/20" : "bg-muted/50"}`}>
-              <p className="text-xs text-muted-foreground mb-1">
-                {i === 0 ? "🎯 6-Month Goal" : `Milestone ${i + 1}`}
-              </p>
-              <p className="text-sm font-medium">{milestone}</p>
-            </motion.div>
-          ))}
-        </div>
-
-        {retentionRisks.length > 0 && (
-          <div className="mt-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-            <p className="text-xs font-semibold text-destructive mb-1">⚠️ Retention Risk Windows</p>
-            {retentionRisks.map((risk, i) => (
-              <p key={i} className="text-xs text-muted-foreground">{risk}</p>
+      {hasCareerCompass && (
+        <div className="bg-card rounded-xl border border-border/50 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Career Compass</h2>
+            <Button variant="ghost" size="sm" className="gap-1 text-primary">
+              <ExternalLink className="w-3.5 h-3.5" /> View Full Roadmap
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(isDemoMode
+              ? ["Become Head Chef within 2 years", "Achieve Michelin recognition", "Open own restaurant by 35"]
+              : []
+            ).map((milestone, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className={`rounded-lg p-4 ${i === 0 ? "bg-primary/10 border border-primary/20" : "bg-muted/50"}`}>
+                <p className="text-xs text-muted-foreground mb-1">
+                  {i === 0 ? "🎯 6-Month Goal" : `Milestone ${i + 1}`}
+                </p>
+                <p className="text-sm font-medium">{milestone}</p>
+              </motion.div>
             ))}
+          </div>
+
+          {retentionRisks.length > 0 && (
+            <div className="mt-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <p className="text-xs font-semibold text-destructive mb-1">⚠️ Retention Risk Windows</p>
+              {retentionRisks.map((risk, i) => (
+                <p key={i} className="text-xs text-muted-foreground">{risk}</p>
+              ))}
           </div>
         )}
 
