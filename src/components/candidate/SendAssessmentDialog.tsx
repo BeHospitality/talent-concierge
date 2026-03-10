@@ -194,7 +194,14 @@ Be Connect`;
       queryClient.invalidateQueries({ queryKey: ["assessment_links", candidateId] });
       setSentVia(via);
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => {
+      console.error("🚨 Assessment link creation failed:", e);
+      toast({ 
+        title: "Assessment Link Failed", 
+        description: e.message || "Unknown error", 
+        variant: "destructive" 
+      });
+    },
   });
 
   const handleEmail = () => {
