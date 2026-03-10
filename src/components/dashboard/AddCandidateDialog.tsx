@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { useCandidates, type CandidateInsert } from "@/hooks/useCandidates";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
@@ -24,6 +25,7 @@ const emptyForm = {
 export default function AddCandidateDialog({ trigger }: Props) {
   const [open, setOpen] = useState(false);
   const { createCandidate, isCreating } = useCandidates();
+  const { toast } = useToast();
   const [orgId, setOrgId] = useState<string>("");
   const [form, setForm] = useState<CandidateInsert>({ ...emptyForm, organization_id: "" });
 
@@ -47,6 +49,7 @@ export default function AddCandidateDialog({ trigger }: Props) {
       }
     }
     if (!currentOrgId) {
+      toast({ title: "No organization linked", description: "Your account is not linked to an organization yet. Please contact an administrator.", variant: "destructive" });
       return;
     }
     await createCandidate({ ...form, organization_id: currentOrgId });
