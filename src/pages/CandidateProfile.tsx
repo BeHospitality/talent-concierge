@@ -104,9 +104,13 @@ export default function CandidateProfile() {
     ? mockCandidates.find((c) => c.id === id)
     : dbCandidates.map(dbToCandidate).find((c) => c.id === id);
 
-  // Merge prescreening archetype into candidate
+  // Merge prescreening data into candidate
   const candidate = baseCandidate && !isDemoMode && prescreeningData
-    ? { ...baseCandidate, archetype: prescreeningData.tribe_viral_archetype as any }
+    ? {
+        ...baseCandidate,
+        archetype: prescreeningData.tribe_viral_archetype as any,
+        tribe_viral_scores: prescreeningData.tribe_viral_scores as any,
+      }
     : baseCandidate;
 
   if (!candidate) {
