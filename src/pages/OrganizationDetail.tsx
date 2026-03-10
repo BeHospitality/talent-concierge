@@ -233,9 +233,11 @@ export default function OrganizationDetail() {
         <TabsContent value="candidates">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-muted-foreground">{displayCandidates.length} candidate{displayCandidates.length !== 1 ? "s" : ""}</p>
-            <Button size="sm" className="gap-2" onClick={() => navigate(`/`)}>
-              <Plus className="w-4 h-4" />Add Candidate
-            </Button>
+            <AddCandidateDialog preselectedOrgId={id} trigger={
+              <Button size="sm" className="gap-2">
+                <Plus className="w-4 h-4" />Add Candidate
+              </Button>
+            } />
           </div>
           {displayCandidates.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground text-sm">No candidates yet for this organization.</div>
