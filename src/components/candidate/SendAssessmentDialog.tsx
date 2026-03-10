@@ -69,59 +69,116 @@ Be Connect`;
 
   const sendMutation = useMutation({
     mutationFn: async (via: string) => {
+      console.group("🔍 DNA Assessment Link Diagnostics");
+      console.log("Candidate ID:", candidateId);
+      console.log("Candidate Name:", candidateName);
+      console.log("Candidate Email:", candidateEmail);
+      console.log("Candidate Phone:", candidatePhone);
+      console.log("Organization Name:", organizationName);
+      console.log("Job Title:", jobTitle);
+
       // Get org_id: try user's profile first, fall back to candidate's org
       let orgId: string | null = null;
-      const { data: orgData } = await supabase.rpc("get_user_org_id");
+      const { data: orgData, error: orgError } = await supabase.rpc("get_user_org_id");
+      console.log("get_user_org_id result:", orgData, "error:", orgError);
       orgId = orgData;
       if (!orgId) {
-        const { data: cand } = await supabase
+        console.log("No org from profile, falling back to candidate's org...");
+        const { data: cand, error: candError } = await supabase
           .from("candidates")
           .select("organization_id")
           .eq("id", candidateId)
           .single();
+        console.log("Candidate org lookup:", cand, "error:", candError);
         orgId = cand?.organization_id ?? null;
       }
-      if (!orgId) throw new Error("Could not determine organization for this candidate.");
+      if (!orgId) {
+        console.groupEnd();
+        throw new Error("Could not determine organization for this candidate.");
+      }
+      console.log("Resolved orgId:", orgId);
 
       // Get org_code for the magic_links table (DNA app needs this)
-      const { data: orgRow } = await supabase
+      const { data: orgRow, error: orgCodeError } = await supabase
         .from("organizations")
         .select("org_code")
         .eq("id", orgId)
         .single();
-      const orgCode = orgRow?.org_code;
-      if (!orgCode) throw new Error("Could not determine organization code.");
+      console.log("Organization row:", orgRow, "error:", orgCodeError);
+      const orgCode = orgRow?.org_code || "DEFAULT";
+      if (!orgRow?.org_code) {
+        console.warn("⚠️ org_code is null/undefined, using fallback 'DEFAULT'");
+      }
+      console.log("Final org_code:", orgCode);
 
       // Register token with DNA app's edge function (must succeed before Hub insert)
       const dnaEdgeFunctionUrl = "https://bxngkvmdvziaxxkbuwia.supabase.co/functions/v1/register-magic-link";
       const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
+      const payload = {
+        token,
+        candidate_email: candidateEmail,
+        candidate_name: candidateName,
+        org_code: orgCode,
+        expire_at: expireAt.toISOString(),
+      };
+
+      console.log("📤 DNA registration payload:", JSON.stringify(payload, null, 2));
+
+      // Validate required fields
+      const missingFields = Object.entries(payload)
+        .filter(([, v]) => v === null || v === undefined || v === "")
+        .map(([k]) => k);
+      if (missingFields.length > 0) {
+        console.error("❌ Missing required fields:", missingFields);
+        console.groupEnd();
+        throw new Error(`Missing required fields for DNA registration: ${missingFields.join(", ")}`);
+      }
+
       try {
-        console.log("Registering token with DNA app...");
+        console.log("🌐 Calling DNA edge function:", dnaEdgeFunctionUrl);
         const dnaResponse = await fetch(dnaEdgeFunctionUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            token,
-            candidate_email: candidateEmail,
-            candidate_name: candidateName,
-            org_code: orgCode,
-            expire_at: expireAt.toISOString(),
-          }),
+          body: JSON.stringify(payload),
         });
 
+        console.log("📥 DNA response status:", dnaResponse.status, dnaResponse.statusText);
+
         if (!dnaResponse.ok) {
-          const errorData = await dnaResponse.json().catch(() => ({ error: "Unknown error" }));
-          console.error("DNA registration failed:", dnaResponse.status, errorData);
-          throw new Error(`Failed to register with DNA: ${errorData.error || "Unknown error"}`);
+          let errorData: any;
+          try {
+            errorData = await dnaResponse.json();
+          } catch (parseErr) {
+            errorData = { error: `Failed to parse error response (status ${dnaResponse.status})` };
+            console.error("Could not parse DNA error response:", parseErr);
+          }
+          console.error("❌ DNA registration failed:", {
+            status: dnaResponse.status,
+            statusText: dnaResponse.statusText,
+            errorData,
+          });
+          console.groupEnd();
+
+          const errorMsg = errorData?.error || errorData?.message || `HTTP ${dnaResponse.status}`;
+          throw new Error(`DNA registration failed: ${errorMsg}`);
         }
 
         const dnaData = await dnaResponse.json();
-        console.log("Token registered with DNA successfully:", dnaData);
-      } catch (dnaError) {
-        console.error("Failed to register token with DNA app:", dnaError);
-        throw new Error("Could not register assessment with DNA app. Please try again.");
+        console.log("✅ Token registered with DNA successfully:", dnaData);
+      } catch (dnaError: any) {
+        console.error("❌ DNA registration error:", dnaError);
+        console.groupEnd();
+        
+        // Distinguish network errors from API errors
+        const isNetworkError = dnaError instanceof TypeError && dnaError.message.includes("fetch");
+        const errorDescription = isNetworkError
+          ? "Network error: Could not reach DNA app. Check if the edge function is deployed."
+          : dnaError.message || "Unknown error during DNA registration";
+        
+        throw new Error(errorDescription);
       }
+      console.groupEnd();
 
       // Insert into assessment_links (Hub tracking) — only after DNA registration succeeds
       const { error } = await supabase.from("assessment_links").insert({
@@ -137,7 +194,14 @@ Be Connect`;
       queryClient.invalidateQueries({ queryKey: ["assessment_links", candidateId] });
       setSentVia(via);
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => {
+      console.error("🚨 Assessment link creation failed:", e);
+      toast({ 
+        title: "Assessment Link Failed", 
+        description: e.message || "Unknown error", 
+        variant: "destructive" 
+      });
+    },
   });
 
   const handleEmail = () => {
