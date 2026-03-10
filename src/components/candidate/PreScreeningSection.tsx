@@ -233,32 +233,33 @@ export function PreScreeningSection({ candidate, isDemoMode, onUpdate }: PreScre
               ))}
           </div>
         )}
+        </div>
+      )}
 
-        {/* Status Toggle */}
-        <div className="mt-6 pt-6 border-t border-border/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {!isDemoMode && onUpdate ? (
-                <div className="flex items-center gap-2">
-                  <Checkbox checked={candidate.prescreening_complete}
-                    onCheckedChange={(checked) => onUpdate({ prescreening_complete: !!checked })} />
-                  <span className="text-sm font-medium">Mark as Pre-Screening Complete</span>
-                </div>
-              ) : (
-                candidate.prescreening_complete ? (
-                  <Badge className="bg-success/20 text-success border-0">✓ Pre-Screening Complete</Badge>
-                ) : (
-                  <Badge variant="secondary">Pre-Screening Incomplete</Badge>
-                )
-              )}
-            </div>
-            {candidate.prescreening_complete && (
-              <div className="flex gap-2">
-                <Badge className="bg-success/10 text-success border-0 text-[10px]">Dossier Unlocked</Badge>
-                <Badge className="bg-success/10 text-success border-0 text-[10px]">Submit Unlocked</Badge>
+      {/* Status Toggle */}
+      <div className="bg-card rounded-xl border border-border/50 p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {!isDemoMode && onUpdate ? (
+              <div className="flex items-center gap-2">
+                <Checkbox checked={candidate.prescreening_complete}
+                  onCheckedChange={(checked) => onUpdate({ prescreening_complete: !!checked })} />
+                <span className="text-sm font-medium">Mark as Pre-Screening Complete</span>
               </div>
+            ) : (
+              candidate.prescreening_complete ? (
+                <Badge className="bg-success/20 text-success border-0">✓ Pre-Screening Complete</Badge>
+              ) : (
+                <Badge variant="secondary">Pre-Screening Incomplete</Badge>
+              )
             )}
           </div>
+          {candidate.prescreening_complete && (
+            <div className="flex gap-2">
+              <Badge className="bg-success/10 text-success border-0 text-[10px]">Dossier Unlocked</Badge>
+              <Badge className="bg-success/10 text-success border-0 text-[10px]">Submit Unlocked</Badge>
+            </div>
+          )}
         </div>
       </div>
     </div>
