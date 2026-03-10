@@ -47,6 +47,9 @@ export default function AddCandidateDialog({ trigger }: Props) {
       }
     }
     if (!currentOrgId) {
+      const { toast } = await import("@/hooks/use-toast").then(m => ({ toast: m.useToast }));
+      // Can't use hook here, use the toast from component scope
+      alert("Your account is not linked to an organization. Please contact an administrator.");
       return;
     }
     await createCandidate({ ...form, organization_id: currentOrgId });
