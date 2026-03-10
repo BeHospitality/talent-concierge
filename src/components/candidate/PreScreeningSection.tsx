@@ -73,11 +73,9 @@ export function PreScreeningSection({ candidate, isDemoMode, onUpdate }: PreScre
 
   const archetypeColor = archetype === "lion" ? "hsl(38, 92%, 50%)" : archetype === "whale" ? "hsl(210, 70%, 55%)" : "hsl(270, 60%, 55%)";
 
-  const milestones = candidate.career_compass_milestones as string[] | null;
-  const hasCareerCompass = milestones && milestones.length > 0;
+  const hasCareerCompass = candidate.prescreening_complete && archetype;
 
-  const retentionRisks = (candidate.retention_risk_windows as string[] | null) ?? 
-    (archetype === "lion" ? ["Month 6-8: May seek leadership if not given autonomy"] : []);
+  const retentionRisks = archetype === "lion" ? ["Month 6-8: May seek leadership if not given autonomy"] : [];
 
   return (
     <div className="space-y-6">
