@@ -365,6 +365,13 @@ export type Database = {
             referencedRelation: "dossiers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "dossier_actions_dossier_id_fkey"
+            columns: ["dossier_id"]
+            isOneToOne: false
+            referencedRelation: "public_dossiers"
+            referencedColumns: ["id"]
+          },
         ]
       }
       dossier_views: {
@@ -395,6 +402,13 @@ export type Database = {
             columns: ["dossier_id"]
             isOneToOne: false
             referencedRelation: "dossiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossier_views_dossier_id_fkey"
+            columns: ["dossier_id"]
+            isOneToOne: false
+            referencedRelation: "public_dossiers"
             referencedColumns: ["id"]
           },
         ]
@@ -1738,6 +1752,92 @@ export type Database = {
           },
         ]
       }
+      public_dossiers: {
+        Row: {
+          candidate_id: string | null
+          created_at: string | null
+          department: string | null
+          dossier_url: string | null
+          expires_at: string | null
+          first_viewed_at: string | null
+          hiring_manager_id: string | null
+          id: string | null
+          last_viewed_at: string | null
+          manager_notes: string | null
+          organization_id: string | null
+          role: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["dossier_status"] | null
+          unique_code: string | null
+          view_count: number | null
+        }
+        Insert: {
+          candidate_id?: string | null
+          created_at?: string | null
+          department?: string | null
+          dossier_url?: string | null
+          expires_at?: string | null
+          first_viewed_at?: string | null
+          hiring_manager_id?: string | null
+          id?: string | null
+          last_viewed_at?: string | null
+          manager_notes?: string | null
+          organization_id?: string | null
+          role?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["dossier_status"] | null
+          unique_code?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          candidate_id?: string | null
+          created_at?: string | null
+          department?: string | null
+          dossier_url?: string | null
+          expires_at?: string | null
+          first_viewed_at?: string | null
+          hiring_manager_id?: string | null
+          id?: string | null
+          last_viewed_at?: string | null
+          manager_notes?: string | null
+          organization_id?: string | null
+          role?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["dossier_status"] | null
+          unique_code?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dossiers_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_hiring_manager_id_fkey"
+            columns: ["hiring_manager_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_managers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_insight_reports: {
         Row: {
           access_code: string | null
@@ -1803,6 +1903,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      track_dossier_view: { Args: { p_dossier_id: string }; Returns: undefined }
+      track_insight_view: { Args: { p_report_id: string }; Returns: undefined }
+      use_magic_link: { Args: { p_token: string }; Returns: boolean }
+      validate_assessment_link: { Args: { p_token: string }; Returns: Json }
+      validate_magic_link: { Args: { p_token: string }; Returns: Json }
+      verify_dossier_pin: {
+        Args: { p_pin: string; p_unique_code: string }
+        Returns: Json
       }
       verify_insight_pin: {
         Args: { p_access_code: string; p_pin: string }
