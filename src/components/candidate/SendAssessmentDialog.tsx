@@ -69,47 +69,29 @@ Be Connect`;
 
   const sendMutation = useMutation({
     mutationFn: async (via: string) => {
-      console.group("🔍 DNA Assessment Link Diagnostics");
-      console.log("Candidate ID:", candidateId);
-      console.log("Candidate Name:", candidateName);
-      console.log("Candidate Email:", candidateEmail);
-      console.log("Candidate Phone:", candidatePhone);
-      console.log("Organization Name:", organizationName);
-      console.log("Job Title:", jobTitle);
-
       // Get org_id: try user's profile first, fall back to candidate's org
       let orgId: string | null = null;
-      const { data: orgData, error: orgError } = await supabase.rpc("get_user_org_id");
-      console.log("get_user_org_id result:", orgData, "error:", orgError);
+      const { data: orgData } = await supabase.rpc("get_user_org_id");
       orgId = orgData;
       if (!orgId) {
-        console.log("No org from profile, falling back to candidate's org...");
-        const { data: cand, error: candError } = await supabase
+        const { data: cand } = await supabase
           .from("candidates")
           .select("organization_id")
           .eq("id", candidateId)
           .single();
-        console.log("Candidate org lookup:", cand, "error:", candError);
         orgId = cand?.organization_id ?? null;
       }
       if (!orgId) {
-        console.groupEnd();
         throw new Error("Could not determine organization for this candidate.");
       }
-      console.log("Resolved orgId:", orgId);
 
       // Get org_code for the magic_links table (DNA app needs this)
-      const { data: orgRow, error: orgCodeError } = await supabase
+      const { data: orgRow } = await supabase
         .from("organizations")
         .select("org_code")
         .eq("id", orgId)
         .single();
-      console.log("Organization row:", orgRow, "error:", orgCodeError);
       const orgCode = orgRow?.org_code || "DEFAULT";
-      if (!orgRow?.org_code) {
-        console.warn("⚠️ org_code is null/undefined, using fallback 'DEFAULT'");
-      }
-      console.log("Final org_code:", orgCode);
 
       // Register token with DNA app's edge function (must succeed before Hub insert)
       const dnaEdgeFunctionUrl = "https://bxngkvmdvziaxxkbuwia.supabase.co/functions/v1/register-magic-link";
