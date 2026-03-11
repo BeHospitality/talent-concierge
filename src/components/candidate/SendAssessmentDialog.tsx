@@ -156,7 +156,6 @@ Be Connect`;
       setSentVia(via);
     },
     onError: (e: any) => {
-      console.error("🚨 Assessment link creation failed:", e);
       toast({ 
         title: "Assessment Link Failed", 
         description: e.message || "Unknown error", 

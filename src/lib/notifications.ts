@@ -28,14 +28,12 @@ export async function sendInAppNotification(payload: NotificationPayload) {
   return { success: true };
 }
 
-export async function sendSMSNotification(phone: string, message: string) {
-  // TODO: Wire Twilio in Week 4
-  console.log("📱 SMS Notification (logged for now):", { to: phone, message });
+export async function sendSMSNotification(_phone: string, _message: string) {
+  // TODO: Wire Twilio integration
   return { success: true, logged: true };
 }
 
-export async function sendWhatsAppNotification(phone: string, message: string) {
-  // TODO: Wire WhatsApp Business API in Week 4
-  console.log("💬 WhatsApp Notification (logged for now):", { to: phone, message });
+export async function sendWhatsAppNotification(_phone: string, _message: string) {
+  // TODO: Wire WhatsApp Business API integration
   return { success: true, logged: true };
 }
