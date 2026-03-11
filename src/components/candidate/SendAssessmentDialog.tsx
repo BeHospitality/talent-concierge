@@ -105,54 +105,34 @@ Be Connect`;
         expire_at: expireAt.toISOString(),
       };
 
-      console.log("📤 DNA registration payload:", JSON.stringify(payload, null, 2));
-
       // Validate required fields
       const missingFields = Object.entries(payload)
         .filter(([, v]) => v === null || v === undefined || v === "")
         .map(([k]) => k);
       if (missingFields.length > 0) {
-        console.error("❌ Missing required fields:", missingFields);
-        console.groupEnd();
         throw new Error(`Missing required fields for DNA registration: ${missingFields.join(", ")}`);
       }
 
       try {
-        console.log("🌐 Calling DNA edge function:", dnaEdgeFunctionUrl);
         const dnaResponse = await fetch(dnaEdgeFunctionUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
 
-        console.log("📥 DNA response status:", dnaResponse.status, dnaResponse.statusText);
-
         if (!dnaResponse.ok) {
           let errorData: any;
           try {
             errorData = await dnaResponse.json();
-          } catch (parseErr) {
+          } catch {
             errorData = { error: `Failed to parse error response (status ${dnaResponse.status})` };
-            console.error("Could not parse DNA error response:", parseErr);
           }
-          console.error("❌ DNA registration failed:", {
-            status: dnaResponse.status,
-            statusText: dnaResponse.statusText,
-            errorData,
-          });
-          console.groupEnd();
-
           const errorMsg = errorData?.error || errorData?.message || `HTTP ${dnaResponse.status}`;
           throw new Error(`DNA registration failed: ${errorMsg}`);
         }
 
-        const dnaData = await dnaResponse.json();
-        console.log("✅ Token registered with DNA successfully:", dnaData);
+        await dnaResponse.json();
       } catch (dnaError: any) {
-        console.error("❌ DNA registration error:", dnaError);
-        console.groupEnd();
-        
-        // Distinguish network errors from API errors
         const isNetworkError = dnaError instanceof TypeError && dnaError.message.includes("fetch");
         const errorDescription = isNetworkError
           ? "Network error: Could not reach DNA app. Check if the edge function is deployed."
@@ -160,7 +140,6 @@ Be Connect`;
         
         throw new Error(errorDescription);
       }
-      console.groupEnd();
 
       // Insert into assessment_links (Hub tracking) — only after DNA registration succeeds
       const { error } = await supabase.from("assessment_links").insert({
