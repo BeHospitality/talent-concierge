@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
     }
 
     // 4. Log to audit trail
-    await supabase
+    const { error: auditError } = await supabase
       .from("audit_log")
       .insert({
         event_type: "client_onboarded_from_staff_audit",
@@ -133,8 +133,11 @@ Deno.serve(async (req) => {
           vibe_check_count: vibe_check_responses?.length || 0,
           source: "staff_audit_conversion",
         },
-      })
-      .catch((err: unknown) => console.warn("Audit log failed:", err));
+      });
+
+    if (auditError) {
+      console.warn("Audit log failed:", auditError);
+    }
 
     console.log("Client onboarded successfully:", {
       org_code,
