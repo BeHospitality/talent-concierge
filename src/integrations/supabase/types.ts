@@ -1491,9 +1491,13 @@ export type Database = {
           career_compass_motivators: Json | null
           career_compass_url: string | null
           completed_at: string | null
+          department_matches: string[] | null
+          dimension_scores: Json | null
+          geography_matches: string[] | null
           id: string
           organization_id: string
           retention_risk_windows: Json | null
+          sector_matches: string[] | null
           six_month_checkin_date: string | null
           tribe_viral_archetype: Database["public"]["Enums"]["archetype"] | null
           tribe_viral_scores: Json | null
@@ -1505,9 +1509,13 @@ export type Database = {
           career_compass_motivators?: Json | null
           career_compass_url?: string | null
           completed_at?: string | null
+          department_matches?: string[] | null
+          dimension_scores?: Json | null
+          geography_matches?: string[] | null
           id?: string
           organization_id: string
           retention_risk_windows?: Json | null
+          sector_matches?: string[] | null
           six_month_checkin_date?: string | null
           tribe_viral_archetype?:
             | Database["public"]["Enums"]["archetype"]
@@ -1521,9 +1529,13 @@ export type Database = {
           career_compass_motivators?: Json | null
           career_compass_url?: string | null
           completed_at?: string | null
+          department_matches?: string[] | null
+          dimension_scores?: Json | null
+          geography_matches?: string[] | null
           id?: string
           organization_id?: string
           retention_risk_windows?: Json | null
+          sector_matches?: string[] | null
           six_month_checkin_date?: string | null
           tribe_viral_archetype?:
             | Database["public"]["Enums"]["archetype"]
