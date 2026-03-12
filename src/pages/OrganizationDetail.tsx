@@ -9,8 +9,9 @@ import { mockCandidates, mockOrganizations, STAGE_LABELS } from "@/data/mockData
 import { motion } from "framer-motion";
 import {
   Building2, ArrowLeft, Users, MapPin, Clock, Edit, Trash2,
-  Plus, Route, UserPlus, ChevronRight, Mail, Settings2
+  Plus, Route, UserPlus, ChevronRight, Mail, Settings2, Briefcase
 } from "lucide-react";
+import { HiringManagersTab } from "@/components/organization/HiringManagersTab";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
