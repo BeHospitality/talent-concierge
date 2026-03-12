@@ -1,7 +1,11 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { Settings as SettingsIcon, Users, UserCheck, ListChecks, Activity, Bell } from "lucide-react";
+import { Users, UserCheck, ListChecks, Activity, Bell } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HiringManagersSettings } from "@/components/settings/HiringManagersSettings";
+import { TeamDirectorySettings } from "@/components/settings/TeamDirectorySettings";
+import { ChecklistTemplatesSettings } from "@/components/settings/ChecklistTemplatesSettings";
+import { EngagementRulesSettings } from "@/components/settings/EngagementRulesSettings";
+import { NotificationsSettings } from "@/components/settings/NotificationsSettings";
 
 const tabs = [
   { id: "managers", label: "Hiring Managers", icon: Users },
@@ -29,21 +33,21 @@ export default function Settings() {
           ))}
         </TabsList>
 
-        {tabs.map((tab) => (
-          <TabsContent key={tab.id} value={tab.id}>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-card rounded-xl border border-border/50 p-8">
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                  <tab.icon className="w-7 h-7 text-muted-foreground" />
-                </div>
-                <h2 className="text-lg font-semibold mb-2">{tab.label}</h2>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  This section will allow you to manage {tab.label.toLowerCase()}. Full functionality coming in Phase 3.
-                </p>
-              </div>
-            </motion.div>
-          </TabsContent>
-        ))}
+        <TabsContent value="managers">
+          <HiringManagersSettings />
+        </TabsContent>
+        <TabsContent value="team">
+          <TeamDirectorySettings />
+        </TabsContent>
+        <TabsContent value="templates">
+          <ChecklistTemplatesSettings />
+        </TabsContent>
+        <TabsContent value="engagement">
+          <EngagementRulesSettings />
+        </TabsContent>
+        <TabsContent value="notifications">
+          <NotificationsSettings />
+        </TabsContent>
       </Tabs>
     </div>
   );
