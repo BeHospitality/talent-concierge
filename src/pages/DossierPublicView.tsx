@@ -356,7 +356,37 @@ export default function DossierPublicView() {
           </motion.div>
         )}
 
-        {/* Footer */}
+        {/* Resume Download */}
+        {content?.dossier?.include_resume && content?.dossier?.resume_url && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+            className="bg-card rounded-xl border border-border p-6">
+            <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" /> Candidate Resume
+            </h2>
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 border border-border/30">
+              <FileText className="w-10 h-10 text-primary/70 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{content.dossier.resume_filename || "Resume"}</p>
+              </div>
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  const a = document.createElement("a");
+                  a.href = content.dossier!.resume_url!;
+                  a.download = content.dossier!.resume_filename || "resume";
+                  a.target = "_blank";
+                  a.rel = "noopener noreferrer";
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                }}
+              >
+                <Download className="w-3.5 h-3.5" /> Download CV
+              </Button>
+            </div>
+          </motion.div>
+        )
         <div className="text-center text-xs text-muted-foreground py-6">
           <p>This dossier is confidential and intended for the named recipient only.</p>
           <p className="flex items-center justify-center gap-1 mt-1">
