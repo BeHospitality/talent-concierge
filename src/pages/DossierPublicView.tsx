@@ -386,7 +386,9 @@ export default function DossierPublicView() {
               </Button>
             </div>
           </motion.div>
-        )
+        )}
+
+        {/* Footer */}
         <div className="text-center text-xs text-muted-foreground py-6">
           <p>This dossier is confidential and intended for the named recipient only.</p>
           <p className="flex items-center justify-center gap-1 mt-1">
