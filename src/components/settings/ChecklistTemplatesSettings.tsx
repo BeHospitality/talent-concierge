@@ -37,13 +37,13 @@ export function ChecklistTemplatesSettings() {
 
   const saveTemplate = useMutation({
     mutationFn: async () => {
-      const validItems = items.filter(i => i.title.trim());
+      const validItems = items.filter(i => i.title.trim()).map(i => ({ title: i.title }));
       if (!templateName.trim() || validItems.length === 0) throw new Error("Name and at least one item required");
       if (editingTemplate) {
-        const { error } = await supabase.from("checklist_templates").update({ template_name: templateName, items: validItems }).eq("id", editingTemplate.id);
+        const { error } = await supabase.from("checklist_templates").update({ template_name: templateName, items: validItems as any }).eq("id", editingTemplate.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("checklist_templates").insert({ template_name: templateName, items: validItems });
+        const { error } = await supabase.from("checklist_templates").insert([{ template_name: templateName, items: validItems as any }]);
         if (error) throw error;
       }
     },
