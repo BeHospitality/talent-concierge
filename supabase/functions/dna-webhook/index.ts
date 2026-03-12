@@ -147,6 +147,10 @@ Deno.serve(async (req) => {
       organization_id: candidate.organization_id,
       tribe_viral_archetype: payload.archetype.toLowerCase(),
       tribe_viral_scores: payload.dimension_scores,
+      dimension_scores: payload.dimension_scores,
+      sector_matches: payload.sector_matches,
+      geography_matches: payload.geography_matches,
+      department_matches: payload.department_matches,
       completed_at: new Date().toISOString(),
     };
 
