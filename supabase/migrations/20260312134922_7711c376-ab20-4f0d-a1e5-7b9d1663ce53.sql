@@ -1,0 +1,1 @@
+UPDATE dossiers SET status = 'sent', sent_at = now() WHERE unique_code = 'bhw3bdkb';
