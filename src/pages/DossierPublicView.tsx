@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Lock, ShieldCheck, AlertTriangle, User, MapPin, Brain, Building2, Globe, Briefcase } from "lucide-react";
+import { Lock, ShieldCheck, AlertTriangle, User, MapPin, Brain, Building2, Globe, Briefcase, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -46,7 +46,7 @@ export default function DossierPublicView() {
       // Get candidate info via public_dossiers join
       const { data: dossier } = await supabase
         .from("public_dossiers")
-        .select("id, candidate_id, department, role, manager_notes, organization_id")
+        .select("id, candidate_id, department, role, manager_notes, organization_id, include_resume, resume_url, resume_filename")
         .eq("id", dossierId!)
         .single();
       if (!dossier) return null;
@@ -352,6 +352,38 @@ export default function DossierPublicView() {
                   <Badge variant="secondary" className="text-[10px]">{d.fitScore}%</Badge>
                 </div>
               ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Resume Download */}
+        {content?.dossier?.include_resume && content?.dossier?.resume_url && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+            className="bg-card rounded-xl border border-border p-6">
+            <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" /> Candidate Resume
+            </h2>
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 border border-border/30">
+              <FileText className="w-10 h-10 text-primary/70 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{content.dossier.resume_filename || "Resume"}</p>
+              </div>
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  const a = document.createElement("a");
+                  a.href = content.dossier!.resume_url!;
+                  a.download = content.dossier!.resume_filename || "resume";
+                  a.target = "_blank";
+                  a.rel = "noopener noreferrer";
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                }}
+              >
+                <Download className="w-3.5 h-3.5" /> Download CV
+              </Button>
             </div>
           </motion.div>
         )}

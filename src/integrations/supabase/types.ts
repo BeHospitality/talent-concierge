@@ -429,10 +429,13 @@ export type Database = {
           first_viewed_at: string | null
           hiring_manager_id: string | null
           id: string
+          include_resume: boolean | null
           last_viewed_at: string | null
           manager_notes: string | null
           organization_id: string | null
           pin_code: string
+          resume_filename: string | null
+          resume_url: string | null
           role: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["dossier_status"]
@@ -448,10 +451,13 @@ export type Database = {
           first_viewed_at?: string | null
           hiring_manager_id?: string | null
           id?: string
+          include_resume?: boolean | null
           last_viewed_at?: string | null
           manager_notes?: string | null
           organization_id?: string | null
           pin_code: string
+          resume_filename?: string | null
+          resume_url?: string | null
           role?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["dossier_status"]
@@ -467,10 +473,13 @@ export type Database = {
           first_viewed_at?: string | null
           hiring_manager_id?: string | null
           id?: string
+          include_resume?: boolean | null
           last_viewed_at?: string | null
           manager_notes?: string | null
           organization_id?: string | null
           pin_code?: string
+          resume_filename?: string | null
+          resume_url?: string | null
           role?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["dossier_status"]
@@ -1798,9 +1807,12 @@ export type Database = {
           first_viewed_at: string | null
           hiring_manager_id: string | null
           id: string | null
+          include_resume: boolean | null
           last_viewed_at: string | null
           manager_notes: string | null
           organization_id: string | null
+          resume_filename: string | null
+          resume_url: string | null
           role: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["dossier_status"] | null
@@ -1816,9 +1828,12 @@ export type Database = {
           first_viewed_at?: string | null
           hiring_manager_id?: string | null
           id?: string | null
+          include_resume?: boolean | null
           last_viewed_at?: string | null
           manager_notes?: string | null
           organization_id?: string | null
+          resume_filename?: string | null
+          resume_url?: string | null
           role?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["dossier_status"] | null
@@ -1834,9 +1849,12 @@ export type Database = {
           first_viewed_at?: string | null
           hiring_manager_id?: string | null
           id?: string | null
+          include_resume?: boolean | null
           last_viewed_at?: string | null
           manager_notes?: string | null
           organization_id?: string | null
+          resume_filename?: string | null
+          resume_url?: string | null
           role?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["dossier_status"] | null

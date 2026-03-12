@@ -546,9 +546,27 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
   const [open, setOpen] = useState(false);
   const [managerNotes, setManagerNotes] = useState("");
   const [selectedManager, setSelectedManager] = useState("");
+  const [includeResume, setIncludeResume] = useState(true);
   const [generatedResult, setGeneratedResult] = useState<{ pin: string; code: string; url: string } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Check if candidate has a resume uploaded
+  const { data: resumeInfo } = useQuery({
+    queryKey: ["candidate-resume-check", candidate.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("candidates")
+        .select("resume_url, resume_filename")
+        .eq("id", candidate.id)
+        .single();
+      if (error) throw error;
+      return data as { resume_url: string | null; resume_filename: string | null };
+    },
+    enabled: !isDemoMode,
+  });
+
+  const hasResume = !!resumeInfo?.resume_url;
 
   const { data: managers = [] } = useQuery({
     queryKey: ["hiring_managers"],
@@ -574,14 +592,31 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
     mutationFn: async () => {
       const pin = Math.random().toString().slice(2, 8);
       const code = Math.random().toString(36).slice(2, 10);
-      const { error } = await supabase.from("dossiers").insert({
+
+      // Build dossier insert payload
+      const dossierPayload: any = {
         candidate_id: candidate.id,
         unique_code: code,
         pin_code: pin,
         hiring_manager_id: selectedManager || null,
         manager_notes: managerNotes || null,
         status: "not_sent",
-      } as any);
+        include_resume: includeResume && hasResume,
+      };
+
+      // If including resume, generate a signed URL (30 days) and copy metadata
+      if (includeResume && hasResume && resumeInfo?.resume_url) {
+        const { data: signedData } = await supabase.storage
+          .from("candidate-resumes")
+          .createSignedUrl(resumeInfo.resume_url, 30 * 24 * 60 * 60); // 30 days
+
+        if (signedData?.signedUrl) {
+          dossierPayload.resume_url = signedData.signedUrl;
+          dossierPayload.resume_filename = resumeInfo.resume_filename;
+        }
+      }
+
+      const { error } = await supabase.from("dossiers").insert(dossierPayload);
       if (error) throw error;
       return { pin, code, url: `${window.location.origin}/dossier/${code}` };
     },
@@ -602,6 +637,7 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
       setGeneratedResult(null);
       setManagerNotes("");
       setSelectedManager("");
+      setIncludeResume(true);
     }
   };
 
@@ -668,6 +704,22 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
                   <div>
                     <Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes for Hiring Manager</Label>
                     <Textarea value={managerNotes} onChange={(e) => setManagerNotes(e.target.value)} placeholder="Add context for the hiring manager..." className="mt-1 bg-muted/50" />
+                  </div>
+                  {/* Resume toggle */}
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                    <Checkbox
+                      id="include-resume"
+                      checked={includeResume && hasResume}
+                      onCheckedChange={(checked) => setIncludeResume(!!checked)}
+                      disabled={!hasResume}
+                    />
+                    <label htmlFor="include-resume" className="text-sm flex-1 cursor-pointer">
+                      {hasResume ? (
+                        <>Include candidate's CV/Resume <span className="text-muted-foreground">({resumeInfo?.resume_filename})</span></>
+                      ) : (
+                        <span className="text-muted-foreground">No CV/Resume uploaded for this candidate</span>
+                      )}
+                    </label>
                   </div>
                   <div className="bg-muted/30 rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">A 6-digit PIN code and unique dossier link will be auto-generated.</p>
