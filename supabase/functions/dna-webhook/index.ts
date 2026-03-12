@@ -47,6 +47,20 @@ const SCREENING_TEMPLATE = [
   },
 ];
 
+// ─── Normalise payload: accept both Hub and DNA app field names ───
+function normalisePayload(body: Record<string, unknown>) {
+  return {
+    assessment_id: (body.assessment_id ?? body.assessmentId ?? null) as string | null,
+    candidate_email: (body.candidate_email ?? body.candidateEmail ?? null) as string | null,
+    candidate_name: (body.candidate_name ?? body.candidateName ?? null) as string | null,
+    archetype: (body.archetype ?? body.tribe_viral_archetype ?? null) as string | null,
+    dimension_scores: (body.dimension_scores ?? body.tribe_viral_scores ?? null) as Record<string, number> | null,
+    sector_matches: (body.sectorMatches ?? body.sector_matches ?? null) as string[] | null,
+    geography_matches: (body.geographyMatches ?? body.geography_matches ?? null) as string[] | null,
+    department_matches: (body.departmentMatches ?? body.department_matches ?? null) as string[] | null,
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -64,9 +78,9 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  let body: Record<string, unknown>;
+  let rawBody: Record<string, unknown>;
   try {
-    body = await req.json();
+    rawBody = await req.json();
   } catch {
     return new Response(
       JSON.stringify({ error: "Invalid JSON body" }),
@@ -74,19 +88,15 @@ Deno.serve(async (req) => {
     );
   }
 
-  const { assessment_id, candidate_email, archetype, dimension_scores } = body as {
-    assessment_id?: string;
-    candidate_email?: string;
-    archetype?: string;
-    dimension_scores?: Record<string, number>;
-  };
+  const payload = normalisePayload(rawBody);
 
   // Validate required fields
-  if (!assessment_id || !candidate_email || !archetype || !dimension_scores) {
+  if (!payload.candidate_email || !payload.archetype || !payload.dimension_scores) {
     return new Response(
       JSON.stringify({
         error: "Missing required fields",
-        required: ["assessment_id", "candidate_email", "archetype", "dimension_scores"],
+        required: ["candidate_email OR candidateEmail", "archetype OR tribe_viral_archetype", "dimension_scores OR tribe_viral_scores"],
+        received_keys: Object.keys(rawBody),
       }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -94,7 +104,7 @@ Deno.serve(async (req) => {
 
   // Validate archetype value
   const validArchetypes = ["lion", "whale", "falcon"];
-  if (!validArchetypes.includes(archetype.toLowerCase())) {
+  if (!validArchetypes.includes(payload.archetype.toLowerCase())) {
     return new Response(
       JSON.stringify({ error: `Invalid archetype. Must be one of: ${validArchetypes.join(", ")}` }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -106,27 +116,24 @@ Deno.serve(async (req) => {
     const { data: candidate, error: findError } = await supabase
       .from("candidates")
       .select("id, full_name, organization_id")
-      .eq("email", candidate_email)
+      .eq("email", payload.candidate_email)
       .maybeSingle();
 
-    if (findError) {
-      throw findError;
-    }
+    if (findError) throw findError;
 
     if (!candidate) {
-      // Log failed attempt
       await supabase.from("audit_log").insert({
         event_type: "dna_webhook_received",
-        payload: { assessment_id, candidate_email, archetype, status: "candidate_not_found" },
+        payload: { ...payload, status: "candidate_not_found" },
       });
 
       return new Response(
-        JSON.stringify({ error: "Candidate not found", candidate_email }),
+        JSON.stringify({ error: "Candidate not found", candidate_email: payload.candidate_email }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Update candidate
+    // Update candidate record
     const { error: updateCandidateError } = await supabase
       .from("candidates")
       .update({ prescreening_complete: true })
@@ -134,18 +141,18 @@ Deno.serve(async (req) => {
 
     if (updateCandidateError) throw updateCandidateError;
 
-    // Upsert prescreening_data
+    // Upsert prescreening_data with all available fields
+    const prescreeningRecord: Record<string, unknown> = {
+      candidate_id: candidate.id,
+      organization_id: candidate.organization_id,
+      tribe_viral_archetype: payload.archetype.toLowerCase(),
+      tribe_viral_scores: payload.dimension_scores,
+      completed_at: new Date().toISOString(),
+    };
+
     const { error: upsertError } = await supabase
       .from("prescreening_data")
-      .upsert(
-        {
-          candidate_id: candidate.id,
-          tribe_viral_archetype: archetype.toLowerCase(),
-          tribe_viral_scores: dimension_scores,
-          completed_at: new Date().toISOString(),
-        },
-        { onConflict: "candidate_id" }
-      );
+      .upsert(prescreeningRecord, { onConflict: "candidate_id" });
 
     if (upsertError) throw upsertError;
 
@@ -153,7 +160,6 @@ Deno.serve(async (req) => {
     let journeyId: string | null = null;
 
     if (candidate.organization_id) {
-      // Check if a journey already exists for this candidate + org
       const { data: existingJourney } = await supabase
         .from("journey_blueprints")
         .select("id")
@@ -162,7 +168,6 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!existingJourney) {
-        // Create new journey blueprint
         const { data: journey, error: journeyError } = await supabase
           .from("journey_blueprints")
           .insert({
@@ -177,7 +182,6 @@ Deno.serve(async (req) => {
         if (!journeyError && journey) {
           journeyId = journey.id;
 
-          // Generate screening phase events
           const now = new Date();
           const screeningEvents = SCREENING_TEMPLATE.map((t) => ({
             journey_id: journey.id,
@@ -198,8 +202,6 @@ Deno.serve(async (req) => {
 
           await supabase.from("journey_events").insert(screeningEvents);
 
-          // Create in-app notification for journey start
-          // Use a team member from this org as the notification target
           const { data: teamMembers } = await supabase
             .from("team_members")
             .select("id")
@@ -216,8 +218,6 @@ Deno.serve(async (req) => {
               read: false,
             });
           }
-        } else {
-          console.error("Failed to create journey:", journeyError);
         }
       }
     }
@@ -226,12 +226,13 @@ Deno.serve(async (req) => {
     await supabase.from("audit_log").insert({
       event_type: "dna_webhook_received",
       payload: {
-        assessment_id,
-        candidate_email,
         candidate_id: candidate.id,
-        archetype,
-        dimension_scores,
+        candidate_email: payload.candidate_email,
+        archetype: payload.archetype,
         journey_id: journeyId,
+        sector_matches: payload.sector_matches,
+        geography_matches: payload.geography_matches,
+        department_matches: payload.department_matches,
         status: "success",
       },
     });
@@ -241,10 +242,9 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
-    // Log error
     await supabase.from("audit_log").insert({
       event_type: "dna_webhook_received",
-      payload: { assessment_id, candidate_email, archetype, status: "error", error: String(err) },
+      payload: { candidate_email: payload.candidate_email, archetype: payload.archetype, status: "error", error: String(err) },
     }).catch(() => {});
 
     return new Response(
