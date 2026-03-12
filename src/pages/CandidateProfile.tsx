@@ -544,10 +544,20 @@ function VideoProfileSection({ candidateId, isDemoMode }: { candidateId: string;
 /* ===================== DOSSIER SECTION ===================== */
 function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDemoMode: boolean }) {
   const [open, setOpen] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [sendingDossierId, setSendingDossierId] = useState<string | null>(null);
   const [managerNotes, setManagerNotes] = useState("");
   const [selectedManager, setSelectedManager] = useState("");
   const [includeResume, setIncludeResume] = useState(true);
   const [generatedResult, setGeneratedResult] = useState<{ pin: string; code: string; url: string } | null>(null);
+
+  // Send form state
+  const [hmName, setHmName] = useState("");
+  const [hmEmail, setHmEmail] = useState("");
+  const [hmPhone, setHmPhone] = useState("");
+  const [personalMessage, setPersonalMessage] = useState("");
+  const [sendIncludeResume, setSendIncludeResume] = useState(true);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -593,7 +603,6 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
       const pin = Math.random().toString().slice(2, 8);
       const code = Math.random().toString(36).slice(2, 10);
 
-      // Build dossier insert payload
       const dossierPayload: any = {
         candidate_id: candidate.id,
         unique_code: code,
@@ -604,12 +613,10 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
         include_resume: includeResume && hasResume,
       };
 
-      // If including resume, generate a signed URL (30 days) and copy metadata
       if (includeResume && hasResume && resumeInfo?.resume_url) {
         const { data: signedData } = await supabase.storage
           .from("candidate-resumes")
-          .createSignedUrl(resumeInfo.resume_url, 30 * 24 * 60 * 60); // 30 days
-
+          .createSignedUrl(resumeInfo.resume_url, 30 * 24 * 60 * 60);
         if (signedData?.signedUrl) {
           dossierPayload.resume_url = signedData.signedUrl;
           dossierPayload.resume_filename = resumeInfo.resume_filename;
@@ -627,9 +634,79 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const handleGenerate = () => {
-    createDossier.mutate();
-  };
+  const sendDossierMutation = useMutation({
+    mutationFn: async (dossierId: string) => {
+      const dossier = dossiers.find((d: any) => d.id === dossierId);
+      if (!dossier) throw new Error("Dossier not found");
+
+      // Generate signed resume URL if including resume
+      let resumeUrl = dossier.resume_url;
+      if (sendIncludeResume && hasResume && resumeInfo?.resume_url && !resumeUrl) {
+        const { data: signedData } = await supabase.storage
+          .from("candidate-resumes")
+          .createSignedUrl(resumeInfo.resume_url, 30 * 24 * 60 * 60);
+        resumeUrl = signedData?.signedUrl ?? null;
+      }
+
+      // Update dossier with manager details and mark as sent
+      const { error: updateError } = await supabase
+        .from("dossiers")
+        .update({
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          hiring_manager_name: hmName,
+          hiring_manager_email: hmEmail,
+          hiring_manager_phone: hmPhone || null,
+          personal_message: personalMessage || null,
+          include_resume: sendIncludeResume && hasResume,
+          resume_url: sendIncludeResume && hasResume ? resumeUrl : null,
+          resume_filename: sendIncludeResume && hasResume ? (resumeInfo?.resume_filename ?? null) : null,
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        } as any)
+        .eq("id", dossierId);
+
+      if (updateError) throw updateError;
+
+      // Send email via edge function
+      const dossierUrl = `${window.location.origin}/dossier/${dossier.unique_code}`;
+      const { error: emailError } = await supabase.functions.invoke("send-dossier-email", {
+        body: {
+          to_email: hmEmail,
+          to_name: hmName,
+          candidate_name: candidate.full_name,
+          candidate_archetype: (candidate as any).archetype ?? null,
+          dossier_url: dossierUrl,
+          pin_code: dossier.pin_code,
+          personal_message: personalMessage || null,
+          sender_name: null, // Could be current user name
+          organization_name: null,
+          includes_resume: sendIncludeResume && hasResume,
+        },
+      });
+
+      if (emailError) throw emailError;
+
+      // Log to audit
+      await supabase.from("audit_log").insert({
+        event_type: "dossier_sent",
+        payload: {
+          candidate_id: candidate.id,
+          hiring_manager_email: hmEmail,
+          dossier_code: dossier.unique_code,
+        },
+      } as any);
+
+      return { managerName: hmName, managerEmail: hmEmail };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["dossiers", candidate.id] });
+      toast({ title: "Dossier Sent!", description: `Sent to ${result.managerName} at ${result.managerEmail}` });
+      handleSendDialogClose(false);
+    },
+    onError: (e: any) => toast({ title: "Send Failed", description: e.message, variant: "destructive" }),
+  });
+
+  const handleGenerate = () => createDossier.mutate();
 
   const handleDialogClose = (isOpen: boolean) => {
     setOpen(isOpen);
@@ -638,6 +715,44 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
       setManagerNotes("");
       setSelectedManager("");
       setIncludeResume(true);
+    }
+  };
+
+  const handleSendDialogClose = (isOpen: boolean) => {
+    setSendOpen(isOpen);
+    if (!isOpen) {
+      setSendingDossierId(null);
+      setHmName("");
+      setHmEmail("");
+      setHmPhone("");
+      setPersonalMessage("");
+      setSendIncludeResume(true);
+    }
+  };
+
+  const openSendDialog = (dossierId: string, d: any) => {
+    setSendingDossierId(dossierId);
+    // Pre-fill from hiring_managers if linked
+    if (d.hiring_managers) {
+      setHmName(d.hiring_managers.full_name || "");
+    }
+    if (d.hiring_manager_email) {
+      setHmEmail(d.hiring_manager_email);
+    }
+    if (d.hiring_manager_name) {
+      setHmName(d.hiring_manager_name);
+    }
+    setSendOpen(true);
+  };
+
+  const resendDossier = (dossierId: string) => {
+    const d = dossiers.find((x: any) => x.id === dossierId);
+    if (d) {
+      setHmName(d.hiring_manager_name || d.hiring_managers?.full_name || "");
+      setHmEmail(d.hiring_manager_email || "");
+      setHmPhone(d.hiring_manager_phone || "");
+      setSendingDossierId(dossierId);
+      setSendOpen(true);
     }
   };
 
@@ -705,20 +820,10 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
                     <Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes for Hiring Manager</Label>
                     <Textarea value={managerNotes} onChange={(e) => setManagerNotes(e.target.value)} placeholder="Add context for the hiring manager..." className="mt-1 bg-muted/50" />
                   </div>
-                  {/* Resume toggle */}
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                    <Checkbox
-                      id="include-resume"
-                      checked={includeResume && hasResume}
-                      onCheckedChange={(checked) => setIncludeResume(!!checked)}
-                      disabled={!hasResume}
-                    />
+                    <Checkbox id="include-resume" checked={includeResume && hasResume} onCheckedChange={(checked) => setIncludeResume(!!checked)} disabled={!hasResume} />
                     <label htmlFor="include-resume" className="text-sm flex-1 cursor-pointer">
-                      {hasResume ? (
-                        <>Include candidate's CV/Resume <span className="text-muted-foreground">({resumeInfo?.resume_filename})</span></>
-                      ) : (
-                        <span className="text-muted-foreground">No CV/Resume uploaded for this candidate</span>
-                      )}
+                      {hasResume ? (<>Include candidate's CV/Resume <span className="text-muted-foreground">({resumeInfo?.resume_filename})</span></>) : (<span className="text-muted-foreground">No CV/Resume uploaded for this candidate</span>)}
                     </label>
                   </div>
                   <div className="bg-muted/30 rounded-lg p-3">
@@ -736,25 +841,95 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
           </Dialog>
         )}
       </div>
+
+      {/* Send Dossier Dialog */}
+      <Dialog open={sendOpen} onOpenChange={handleSendDialogClose}>
+        <DialogContent className="bg-card border-border/50 max-w-lg">
+          <DialogHeader><DialogTitle>Send Dossier to Hiring Manager</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); if (sendingDossierId) sendDossierMutation.mutate(sendingDossierId); }} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Manager Name *</Label>
+                <Input value={hmName} onChange={(e) => setHmName(e.target.value)} required className="mt-1 bg-muted/50" placeholder="John Smith" />
+              </div>
+              <div>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Email *</Label>
+                <Input type="email" value={hmEmail} onChange={(e) => setHmEmail(e.target.value)} required className="mt-1 bg-muted/50" placeholder="john@hotel.com" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Phone (optional)</Label>
+              <Input type="tel" value={hmPhone} onChange={(e) => setHmPhone(e.target.value)} className="mt-1 bg-muted/50" placeholder="+353..." />
+            </div>
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Personal Message (optional)</Label>
+              <Textarea value={personalMessage} onChange={(e) => setPersonalMessage(e.target.value)} placeholder="Add a personal note to the hiring manager..." className="mt-1 bg-muted/50" rows={3} />
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+              <Checkbox id="send-include-resume" checked={sendIncludeResume && hasResume} onCheckedChange={(checked) => setSendIncludeResume(!!checked)} disabled={!hasResume} />
+              <label htmlFor="send-include-resume" className="text-sm flex-1 cursor-pointer">
+                {hasResume ? (<>Include CV/Resume <span className="text-muted-foreground">({resumeInfo?.resume_filename})</span></>) : (<span className="text-muted-foreground">No CV/Resume uploaded</span>)}
+              </label>
+            </div>
+            <div className="bg-muted/30 rounded-lg p-3">
+              <p className="text-xs font-medium text-foreground mb-1">Dossier will include:</p>
+              <ul className="text-xs text-muted-foreground space-y-0.5">
+                <li>• Candidate DNA profile & archetype</li>
+                <li>• Skills & dimension scores</li>
+                <li>• Sector/Geography/Department fit</li>
+                {sendIncludeResume && hasResume && <li>• CV/Resume</li>}
+              </ul>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => handleSendDialogClose(false)}>Cancel</Button>
+              <Button type="submit" className="gap-2 gold-glow-hover" disabled={sendDossierMutation.isPending}>
+                <Send className="w-3.5 h-3.5" />
+                {sendDossierMutation.isPending ? "Sending..." : "Send Dossier"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {!candidate.prescreening_complete && (
         <p className="text-sm text-muted-foreground mb-4">Pre-screening must be completed before generating a dossier.</p>
       )}
       {!isDemoMode && dossiers.length > 0 ? (
         <div className="space-y-3">
           {dossiers.map((d: any) => (
-            <div key={d.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-              <div>
-                <p className="text-sm font-medium">
-                  Dossier — {d.hiring_managers?.full_name || "No manager"}
-                  {d.hiring_managers?.department ? ` (${d.hiring_managers.department})` : ""}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Created {new Date(d.created_at).toLocaleDateString()} · PIN: {d.pin_code} · Views: {d.view_count}
-                </p>
+            <div key={d.id} className="p-3 rounded-lg bg-muted/30">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">
+                    Dossier — {d.hiring_manager_name || d.hiring_managers?.full_name || "No manager"}
+                    {d.hiring_managers?.department ? ` (${d.hiring_managers.department})` : ""}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Created {new Date(d.created_at).toLocaleDateString()} · PIN: {d.pin_code} · Views: {d.view_count}
+                  </p>
+                  {d.hiring_manager_email && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <Mail className="w-3 h-3" /> {d.hiring_manager_email}
+                      {d.sent_at && ` · Sent ${new Date(d.sent_at).toLocaleDateString()}`}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {d.status === "not_sent" && (
+                    <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => openSendDialog(d.id, d)}>
+                      <Send className="w-3 h-3" /> Send
+                    </Button>
+                  )}
+                  {(d.status === "sent" || d.status === "viewed") && (
+                    <Button size="sm" variant="ghost" className="gap-1.5 text-xs" onClick={() => resendDossier(d.id)}>
+                      <Send className="w-3 h-3" /> Resend
+                    </Button>
+                  )}
+                  <Badge className={`capitalize text-[10px] border-0 ${statusColors[d.status] ?? statusColors.not_sent}`}>
+                    {d.status?.replace("_", " ")}
+                  </Badge>
+                </div>
               </div>
-              <Badge className={`capitalize text-[10px] border-0 ${statusColors[d.status] ?? statusColors.not_sent}`}>
-                {d.status?.replace("_", " ")}
-              </Badge>
             </div>
           ))}
           {candidate.archetype && (
@@ -783,8 +958,6 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
     </div>
   );
 }
-
-/* ===================== INTERVIEW SECTION ===================== */
 function InterviewSection({ candidateId, isDemoMode }: { candidateId: string; isDemoMode: boolean }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
