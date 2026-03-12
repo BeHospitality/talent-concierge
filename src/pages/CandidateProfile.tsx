@@ -849,20 +849,68 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
         <DialogContent className="bg-card border-border/50 max-w-lg">
           <DialogHeader><DialogTitle>Send Dossier to Hiring Manager</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); if (sendingDossierId) sendDossierMutation.mutate(sendingDossierId); }} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Manager Name *</Label>
-                <Input value={hmName} onChange={(e) => setHmName(e.target.value)} required className="mt-1 bg-muted/50" placeholder="John Smith" />
-              </div>
-              <div>
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Email *</Label>
-                <Input type="email" value={hmEmail} onChange={(e) => setHmEmail(e.target.value)} required className="mt-1 bg-muted/50" placeholder="john@hotel.com" />
-              </div>
-            </div>
+            {/* Hiring Manager Selection */}
             <div>
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Phone (optional)</Label>
-              <Input type="tel" value={hmPhone} onChange={(e) => setHmPhone(e.target.value)} className="mt-1 bg-muted/50" placeholder="+353..." />
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Select Hiring Manager</Label>
+              <Select value={selectedSendManager} onValueChange={(val) => {
+                setSelectedSendManager(val);
+                if (val && val !== "new") {
+                  const hm = managers.find((m: any) => m.id === val);
+                  if (hm) {
+                    setHmName(hm.full_name);
+                    setHmEmail(hm.email);
+                    setHmPhone(hm.phone || "");
+                  }
+                } else if (val === "new") {
+                  setHmName("");
+                  setHmEmail("");
+                  setHmPhone("");
+                }
+              }}>
+                <SelectTrigger className="mt-1 bg-muted/50"><SelectValue placeholder="Choose existing or add new..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">+ Add New Hiring Manager</SelectItem>
+                  {managers.map((m: any) => (
+                    <SelectItem key={m.id} value={m.id}>{m.full_name} — {m.email}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* Show selected manager info */}
+            {selectedSendManager && selectedSendManager !== "new" && (() => {
+              const hm = managers.find((m: any) => m.id === selectedSendManager);
+              return hm ? (
+                <div className="bg-muted/30 p-3 rounded-lg">
+                  <p className="text-sm">
+                    Sending to: <strong>{hm.full_name}</strong><br />
+                    <span className="text-muted-foreground">{hm.email}{hm.phone ? ` · ${hm.phone}` : ""}</span>
+                  </p>
+                </div>
+              ) : null;
+            })()}
+
+            {/* Manual entry fields for new manager */}
+            {selectedSendManager === "new" && (
+              <div className="space-y-3 border-l-2 border-primary pl-4">
+                <p className="text-xs text-muted-foreground">New hiring manager details:</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Name *</Label>
+                    <Input value={hmName} onChange={(e) => setHmName(e.target.value)} required className="mt-1 bg-muted/50" placeholder="John Smith" />
+                  </div>
+                  <div>
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Email *</Label>
+                    <Input type="email" value={hmEmail} onChange={(e) => setHmEmail(e.target.value)} required className="mt-1 bg-muted/50" placeholder="john@hotel.com" />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Phone (optional)</Label>
+                  <Input type="tel" value={hmPhone} onChange={(e) => setHmPhone(e.target.value)} className="mt-1 bg-muted/50" placeholder="+353..." />
+                </div>
+              </div>
+            )}
+
             <div>
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">Personal Message (optional)</Label>
               <Textarea value={personalMessage} onChange={(e) => setPersonalMessage(e.target.value)} placeholder="Add a personal note to the hiring manager..." className="mt-1 bg-muted/50" rows={3} />
@@ -884,7 +932,7 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
             </div>
             <div className="flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={() => handleSendDialogClose(false)}>Cancel</Button>
-              <Button type="submit" className="gap-2 gold-glow-hover" disabled={sendDossierMutation.isPending}>
+              <Button type="submit" className="gap-2 gold-glow-hover" disabled={sendDossierMutation.isPending || !hmName || !hmEmail}>
                 <Send className="w-3.5 h-3.5" />
                 {sendDossierMutation.isPending ? "Sending..." : "Send Dossier"}
               </Button>
