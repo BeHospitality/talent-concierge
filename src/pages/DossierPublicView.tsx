@@ -46,7 +46,7 @@ export default function DossierPublicView() {
       // Get candidate info via public_dossiers join
       const { data: dossier } = await supabase
         .from("public_dossiers")
-        .select("id, candidate_id, department, role, manager_notes, organization_id")
+        .select("id, candidate_id, department, role, manager_notes, organization_id, include_resume, resume_url, resume_filename")
         .eq("id", dossierId!)
         .single();
       if (!dossier) return null;
