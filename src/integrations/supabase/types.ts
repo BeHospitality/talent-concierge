@@ -427,17 +427,22 @@ export type Database = {
           dossier_url: string | null
           expires_at: string | null
           first_viewed_at: string | null
+          hiring_manager_email: string | null
           hiring_manager_id: string | null
+          hiring_manager_name: string | null
+          hiring_manager_phone: string | null
           id: string
           include_resume: boolean | null
           last_viewed_at: string | null
           manager_notes: string | null
           organization_id: string | null
+          personal_message: string | null
           pin_code: string
           resume_filename: string | null
           resume_url: string | null
           role: string | null
           sent_at: string | null
+          sent_by_user_id: string | null
           status: Database["public"]["Enums"]["dossier_status"]
           unique_code: string
           view_count: number
@@ -449,17 +454,22 @@ export type Database = {
           dossier_url?: string | null
           expires_at?: string | null
           first_viewed_at?: string | null
+          hiring_manager_email?: string | null
           hiring_manager_id?: string | null
+          hiring_manager_name?: string | null
+          hiring_manager_phone?: string | null
           id?: string
           include_resume?: boolean | null
           last_viewed_at?: string | null
           manager_notes?: string | null
           organization_id?: string | null
+          personal_message?: string | null
           pin_code: string
           resume_filename?: string | null
           resume_url?: string | null
           role?: string | null
           sent_at?: string | null
+          sent_by_user_id?: string | null
           status?: Database["public"]["Enums"]["dossier_status"]
           unique_code: string
           view_count?: number
@@ -471,17 +481,22 @@ export type Database = {
           dossier_url?: string | null
           expires_at?: string | null
           first_viewed_at?: string | null
+          hiring_manager_email?: string | null
           hiring_manager_id?: string | null
+          hiring_manager_name?: string | null
+          hiring_manager_phone?: string | null
           id?: string
           include_resume?: boolean | null
           last_viewed_at?: string | null
           manager_notes?: string | null
           organization_id?: string | null
+          personal_message?: string | null
           pin_code?: string
           resume_filename?: string | null
           resume_url?: string | null
           role?: string | null
           sent_at?: string | null
+          sent_by_user_id?: string | null
           status?: Database["public"]["Enums"]["dossier_status"]
           unique_code?: string
           view_count?: number
