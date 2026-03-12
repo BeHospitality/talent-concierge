@@ -19,6 +19,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import InsightsLogin from "./pages/InsightsLogin";
 import InsightsReport from "./pages/InsightsReport";
+import DossierPublicView from "./pages/DossierPublicView";
 
 const queryClient = new QueryClient();
 
@@ -71,8 +72,10 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
+            <Route path="/dossier/:code" element={<DossierPublicView />} />
             <Route path="/insights/:accessCode" element={<InsightsLogin />} />
             <Route path="/insights/:accessCode/report" element={<InsightsReport />} />
+            <Route path="/*" element={<ProtectedRoutes />} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
         </BrowserRouter>
