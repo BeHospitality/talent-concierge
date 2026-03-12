@@ -111,11 +111,13 @@ export default function DossierPublicView() {
         p_pin: fullPin,
       });
 
-      if (data?.valid) {
+      const result = data as unknown as { valid: boolean; id: string | null };
+
+      if (result?.valid) {
         setVerified(true);
-        setDossierId(data.id);
+        setDossierId(result.id);
         // Track view
-        await supabase.rpc("track_dossier_view", { p_dossier_id: data.id });
+        await supabase.rpc("track_dossier_view", { p_dossier_id: result.id! });
       } else {
         setAttempts((a) => a + 1);
         setError(`Incorrect PIN. ${3 - attempts - 1} attempts remaining.`);
