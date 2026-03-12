@@ -637,6 +637,7 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
       setGeneratedResult(null);
       setManagerNotes("");
       setSelectedManager("");
+      setIncludeResume(true);
     }
   };
 

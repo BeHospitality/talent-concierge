@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Lock, ShieldCheck, AlertTriangle, User, MapPin, Brain, Building2, Globe, Briefcase } from "lucide-react";
+import { Lock, ShieldCheck, AlertTriangle, User, MapPin, Brain, Building2, Globe, Briefcase, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
