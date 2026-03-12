@@ -413,8 +413,8 @@ function VideoProfileSection({ candidateId, isDemoMode }: { candidateId: string;
       const path = `${candidateId}/${crypto.randomUUID()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from("candidate-videos").upload(path, file);
       if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from("candidate-videos").getPublicUrl(path);
-      setVideoUrl(urlData.publicUrl);
+      const { data: urlData } = await supabase.storage.from("candidate-videos").createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (urlData?.signedUrl) setVideoUrl(urlData.signedUrl);
       toast({ title: "Video uploaded", description: "URL populated. Click Save to add the clip." });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
