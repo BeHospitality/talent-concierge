@@ -1852,48 +1852,30 @@ export type Database = {
       }
       public_insight_reports: {
         Row: {
-          access_code: string | null
           created_at: string | null
-          first_viewed_at: string | null
           id: string | null
-          manager_email: string | null
           manager_name: string | null
           organization_id: string | null
           property_name: string | null
-          published_at: string | null
-          report_data: Json | null
           status: string | null
-          updated_at: string | null
           view_count: number | null
         }
         Insert: {
-          access_code?: string | null
           created_at?: string | null
-          first_viewed_at?: string | null
           id?: string | null
-          manager_email?: string | null
           manager_name?: string | null
           organization_id?: string | null
           property_name?: string | null
-          published_at?: string | null
-          report_data?: Json | null
           status?: string | null
-          updated_at?: string | null
           view_count?: number | null
         }
         Update: {
-          access_code?: string | null
           created_at?: string | null
-          first_viewed_at?: string | null
           id?: string | null
-          manager_email?: string | null
           manager_name?: string | null
           organization_id?: string | null
           property_name?: string | null
-          published_at?: string | null
-          report_data?: Json | null
           status?: string | null
-          updated_at?: string | null
           view_count?: number | null
         }
         Relationships: [
