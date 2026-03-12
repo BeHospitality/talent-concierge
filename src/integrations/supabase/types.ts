@@ -1417,6 +1417,24 @@ export type Database = {
         }
         Relationships: []
       }
+      pin_attempts: {
+        Row: {
+          attempted_at: string
+          id: string
+          target_code: string
+        }
+        Insert: {
+          attempted_at?: string
+          id?: string
+          target_code: string
+        }
+        Update: {
+          attempted_at?: string
+          id?: string
+          target_code?: string
+        }
+        Relationships: []
+      }
       placement_risks: {
         Row: {
           alternative_placements: Json
@@ -1893,6 +1911,7 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_old_pin_attempts: { Args: never; Returns: undefined }
       get_user_org_id: { Args: never; Returns: string }
       has_role: {
         Args: {
