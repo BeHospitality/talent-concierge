@@ -105,11 +105,12 @@ export default function CandidateProfile() {
     : dbCandidates.map(dbToCandidate).find((c) => c.id === id);
 
   // Merge prescreening data into candidate
+  // Merge prescreening data: prefer dimension_scores (5 dimensions) over tribe_viral_scores (archetype weights)
   const candidate = baseCandidate && !isDemoMode && prescreeningData
     ? {
         ...baseCandidate,
         archetype: prescreeningData.tribe_viral_archetype as any,
-        tribe_viral_scores: prescreeningData.tribe_viral_scores as any,
+        tribe_viral_scores: (prescreeningData.dimension_scores as any) ?? (prescreeningData.tribe_viral_scores as any),
       }
     : baseCandidate;
 
