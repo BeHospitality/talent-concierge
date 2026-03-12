@@ -362,6 +362,11 @@ export default function OrganizationDetail() {
           )}
         </TabsContent>
 
+        {/* Hiring Managers Tab */}
+        <TabsContent value="hiring-managers">
+          <HiringManagersTab organizationId={id!} />
+        </TabsContent>
+
         {/* Journeys Tab */}
         <TabsContent value="journeys">
           <p className="text-sm text-muted-foreground mb-4">{activeJourneyCount} active journey{activeJourneyCount !== 1 ? "s" : ""}</p>
