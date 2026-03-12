@@ -552,6 +552,7 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
   const [generatedResult, setGeneratedResult] = useState<{ pin: string; code: string; url: string } | null>(null);
 
   // Send form state
+  const [selectedSendManager, setSelectedSendManager] = useState<string>("");
   const [hmName, setHmName] = useState("");
   const [hmEmail, setHmEmail] = useState("");
   const [hmPhone, setHmPhone] = useState("");
