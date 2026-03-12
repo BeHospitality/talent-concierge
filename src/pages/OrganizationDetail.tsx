@@ -226,6 +226,7 @@ export default function OrganizationDetail() {
         <TabsList className="mb-6">
           <TabsTrigger value="candidates">Candidates</TabsTrigger>
           <TabsTrigger value="team">Team Members</TabsTrigger>
+          <TabsTrigger value="hiring-managers">Hiring Managers</TabsTrigger>
           <TabsTrigger value="journeys">Journeys</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
