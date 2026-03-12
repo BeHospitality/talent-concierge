@@ -197,6 +197,8 @@ export type Database = {
           photo_url: string | null
           prescreening_complete: boolean
           referral_source: string | null
+          resume_filename: string | null
+          resume_uploaded_at: string | null
           resume_url: string | null
           risk_level: Database["public"]["Enums"]["risk_level"]
           updated_at: string
@@ -219,6 +221,8 @@ export type Database = {
           photo_url?: string | null
           prescreening_complete?: boolean
           referral_source?: string | null
+          resume_filename?: string | null
+          resume_uploaded_at?: string | null
           resume_url?: string | null
           risk_level?: Database["public"]["Enums"]["risk_level"]
           updated_at?: string
@@ -241,6 +245,8 @@ export type Database = {
           photo_url?: string | null
           prescreening_complete?: boolean
           referral_source?: string | null
+          resume_filename?: string | null
+          resume_uploaded_at?: string | null
           resume_url?: string | null
           risk_level?: Database["public"]["Enums"]["risk_level"]
           updated_at?: string

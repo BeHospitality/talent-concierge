@@ -25,6 +25,7 @@ import { EngagementChart } from "@/components/engagement/EngagementChart";
 import { MOOD_EMOJIS, MOOD_LABELS, CONFIDENCE_EMOJIS, CONFIDENCE_LABELS, TEAM_EMOJIS, TEAM_LABELS } from "@/utils/velocityScoring";
 import { TeamCompatibilityPreview } from "@/components/candidate/TeamCompatibilityPreview";
 import { ProfessionalView } from "@/components/candidate/ProfessionalView";
+import { ResumeUploadSection } from "@/components/candidate/ResumeUploadSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -237,7 +238,12 @@ export default function CandidateProfile() {
             <JourneyProgressCard candidateId={candidate.id} />
           )}
 
-          {activeSection === "personal" && <PersonalInfo candidate={candidate} isDemoMode={isDemoMode} onDelete={!isDemoMode ? handleDelete : undefined} onUpdate={!isDemoMode ? handleUpdate : undefined} />}
+          {activeSection === "personal" && (
+            <>
+              <PersonalInfo candidate={candidate} isDemoMode={isDemoMode} onDelete={!isDemoMode ? handleDelete : undefined} onUpdate={!isDemoMode ? handleUpdate : undefined} />
+              {!isDemoMode && <div className="mt-6"><ResumeUploadSection candidateId={candidate.id} /></div>}
+            </>
+          )}
           {activeSection === "journey" && !isDemoMode && <JourneyTimeline candidateId={candidate.id} organizationId={candidate.organization_id} candidateName={candidate.full_name} />}
           {activeSection === "journey" && isDemoMode && (
             <div className="bg-card rounded-xl border border-border/50 p-6 text-center">
