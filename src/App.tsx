@@ -19,6 +19,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import InsightsLogin from "./pages/InsightsLogin";
 import InsightsReport from "./pages/InsightsReport";
+import DossierPublicView from "./pages/DossierPublicView";
 
 const queryClient = new QueryClient();
 
