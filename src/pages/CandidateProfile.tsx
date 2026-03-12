@@ -104,7 +104,6 @@ export default function CandidateProfile() {
     ? mockCandidates.find((c) => c.id === id)
     : dbCandidates.map(dbToCandidate).find((c) => c.id === id);
 
-  // Merge prescreening data into candidate
   // Merge prescreening data: prefer dimension_scores (5 dimensions) over tribe_viral_scores (archetype weights)
   const candidate = baseCandidate && !isDemoMode && prescreeningData
     ? {
