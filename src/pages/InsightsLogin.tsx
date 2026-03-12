@@ -22,7 +22,7 @@ export default function InsightsLogin() {
       const { data, error } = await supabase
         .from("public_insight_reports")
         .select("id, property_name, manager_name, status, created_at")
-        .eq("access_code", accessCode!)
+        .eq("id", accessCode!)
         .single();
       if (error) throw error;
       return data;
