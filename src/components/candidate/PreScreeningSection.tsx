@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ExternalLink } from "lucide-react";
 import { SendAssessmentDialog } from "./SendAssessmentDialog";
+import { DNAResultsModal } from "./DNAResultsModal";
 import type { Candidate } from "@/data/mockData";
 
 interface PreScreeningSectionProps {
@@ -107,9 +108,13 @@ export function PreScreeningSection({ candidate, isDemoMode, onUpdate }: PreScre
         <div className="bg-card rounded-xl border border-border/50 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Tribe-Viral Profile</h2>
-            <Button variant="ghost" size="sm" className="gap-1 text-primary">
-              <ExternalLink className="w-3.5 h-3.5" /> View Full Results
-            </Button>
+            {archetype && (
+              <DNAResultsModal
+                candidateId={candidate.id}
+                candidateName={candidate.full_name}
+                archetype={archetype}
+              />
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
