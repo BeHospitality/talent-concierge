@@ -9,8 +9,9 @@ import { mockCandidates, mockOrganizations, STAGE_LABELS } from "@/data/mockData
 import { motion } from "framer-motion";
 import {
   Building2, ArrowLeft, Users, MapPin, Clock, Edit, Trash2,
-  Plus, Route, UserPlus, ChevronRight, Mail, Settings2
+  Plus, Route, UserPlus, ChevronRight, Mail, Settings2, Briefcase
 } from "lucide-react";
+import { HiringManagersTab } from "@/components/organization/HiringManagersTab";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -225,6 +226,7 @@ export default function OrganizationDetail() {
         <TabsList className="mb-6">
           <TabsTrigger value="candidates">Candidates</TabsTrigger>
           <TabsTrigger value="team">Team Members</TabsTrigger>
+          <TabsTrigger value="hiring-managers">Hiring Managers</TabsTrigger>
           <TabsTrigger value="journeys">Journeys</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
@@ -358,6 +360,11 @@ export default function OrganizationDetail() {
               </table>
             </div>
           )}
+        </TabsContent>
+
+        {/* Hiring Managers Tab */}
+        <TabsContent value="hiring-managers">
+          <HiringManagersTab organizationId={id!} />
         </TabsContent>
 
         {/* Journeys Tab */}
