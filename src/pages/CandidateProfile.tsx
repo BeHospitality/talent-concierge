@@ -723,6 +723,7 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
     setSendOpen(isOpen);
     if (!isOpen) {
       setSendingDossierId(null);
+      setSelectedSendManager("");
       setHmName("");
       setHmEmail("");
       setHmPhone("");
