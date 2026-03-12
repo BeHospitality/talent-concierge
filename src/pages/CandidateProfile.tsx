@@ -91,7 +91,7 @@ export default function CandidateProfile() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("prescreening_data")
-        .select("tribe_viral_archetype, tribe_viral_scores")
+        .select("tribe_viral_archetype, tribe_viral_scores, dimension_scores")
         .eq("candidate_id", id!)
         .maybeSingle();
       if (error) throw error;
