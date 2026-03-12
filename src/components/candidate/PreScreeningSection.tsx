@@ -211,9 +211,9 @@ export function PreScreeningSection({ candidate, isDemoMode, onUpdate }: PreScre
         <div className="bg-card rounded-xl border border-border/50 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Career Compass</h2>
-            <Button variant="ghost" size="sm" className="gap-1 text-primary">
-              <ExternalLink className="w-3.5 h-3.5" /> View Full Roadmap
-            </Button>
+            {archetype && (
+              <CareerRoadmapModal candidateName={candidate.full_name} archetype={archetype} />
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {(isDemoMode
