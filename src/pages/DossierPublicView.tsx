@@ -220,10 +220,10 @@ export default function DossierPublicView() {
   const candidateName = content?.candidate?.full_name || "Candidate";
   const archetype = content?.prescreening?.tribe_viral_archetype as string | undefined;
   const archetypeInfo = archetype ? ARCHETYPE_CONFIG[archetype] : null;
-  const dimensions = content?.prescreening?.dimension_scores as Record<string, number> | null;
-  const sectorMatches = content?.prescreening?.sector_matches as { sector: string; fitScore: number }[] | null;
-  const geoMatches = content?.prescreening?.geography_matches as { region: string; fitScore: number }[] | null;
-  const deptMatches = content?.prescreening?.department_matches as { department: string; fitScore: number }[] | null;
+  const dimensions = content?.prescreening?.dimension_scores as unknown as Record<string, number> | null;
+  const sectorMatches = content?.prescreening?.sector_matches as unknown as { sector: string; fitScore: number }[] | null;
+  const geoMatches = content?.prescreening?.geography_matches as unknown as { region: string; fitScore: number }[] | null;
+  const deptMatches = content?.prescreening?.department_matches as unknown as { department: string; fitScore: number }[] | null;
 
   const keyDimensions = dimensions
     ? [
