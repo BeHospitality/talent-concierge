@@ -704,6 +704,22 @@ function DossierSection({ candidate, isDemoMode }: { candidate: Candidate; isDem
                     <Label className="text-xs uppercase tracking-wider text-muted-foreground">Notes for Hiring Manager</Label>
                     <Textarea value={managerNotes} onChange={(e) => setManagerNotes(e.target.value)} placeholder="Add context for the hiring manager..." className="mt-1 bg-muted/50" />
                   </div>
+                  {/* Resume toggle */}
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                    <Checkbox
+                      id="include-resume"
+                      checked={includeResume && hasResume}
+                      onCheckedChange={(checked) => setIncludeResume(!!checked)}
+                      disabled={!hasResume}
+                    />
+                    <label htmlFor="include-resume" className="text-sm flex-1 cursor-pointer">
+                      {hasResume ? (
+                        <>Include candidate's CV/Resume <span className="text-muted-foreground">({resumeInfo?.resume_filename})</span></>
+                      ) : (
+                        <span className="text-muted-foreground">No CV/Resume uploaded for this candidate</span>
+                      )}
+                    </label>
+                  </div>
                   <div className="bg-muted/30 rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">A 6-digit PIN code and unique dossier link will be auto-generated.</p>
                   </div>
