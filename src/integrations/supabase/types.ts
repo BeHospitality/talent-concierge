@@ -1852,6 +1852,7 @@ export type Database = {
       }
       public_insight_reports: {
         Row: {
+          access_code: string | null
           created_at: string | null
           id: string | null
           manager_name: string | null
@@ -1861,6 +1862,7 @@ export type Database = {
           view_count: number | null
         }
         Insert: {
+          access_code?: string | null
           created_at?: string | null
           id?: string | null
           manager_name?: string | null
@@ -1870,6 +1872,7 @@ export type Database = {
           view_count?: number | null
         }
         Update: {
+          access_code?: string | null
           created_at?: string | null
           id?: string | null
           manager_name?: string | null
