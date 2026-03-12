@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ExternalLink } from "lucide-react";
 import { SendAssessmentDialog } from "./SendAssessmentDialog";
 import { DNAResultsModal } from "./DNAResultsModal";
+import { CareerRoadmapModal } from "./CareerRoadmapModal";
 import type { Candidate } from "@/data/mockData";
 
 interface PreScreeningSectionProps {
