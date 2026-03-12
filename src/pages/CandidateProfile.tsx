@@ -238,7 +238,12 @@ export default function CandidateProfile() {
             <JourneyProgressCard candidateId={candidate.id} />
           )}
 
-          {activeSection === "personal" && <PersonalInfo candidate={candidate} isDemoMode={isDemoMode} onDelete={!isDemoMode ? handleDelete : undefined} onUpdate={!isDemoMode ? handleUpdate : undefined} />}
+          {activeSection === "personal" && (
+            <>
+              <PersonalInfo candidate={candidate} isDemoMode={isDemoMode} onDelete={!isDemoMode ? handleDelete : undefined} onUpdate={!isDemoMode ? handleUpdate : undefined} />
+              {!isDemoMode && <div className="mt-6"><ResumeUploadSection candidateId={candidate.id} /></div>}
+            </>
+          )}
           {activeSection === "journey" && !isDemoMode && <JourneyTimeline candidateId={candidate.id} organizationId={candidate.organization_id} candidateName={candidate.full_name} />}
           {activeSection === "journey" && isDemoMode && (
             <div className="bg-card rounded-xl border border-border/50 p-6 text-center">
