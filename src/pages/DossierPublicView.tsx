@@ -12,6 +12,55 @@ import { DossierWorkingStyle } from "@/components/dossier/DossierWorkingStyle";
 import { DossierRetention } from "@/components/dossier/DossierRetention";
 import { getTopStrengths } from "@/utils/dossierNarratives";
 
+type DepartmentMatch = { department: string; fitScore?: number };
+type GeographyMatch = { region: string; fitScore?: number };
+
+const normalizeDimensions = (value: unknown): Record<string, number> => {
+  if (!value || typeof value !== "object") return {};
+  return Object.entries(value as Record<string, unknown>).reduce<Record<string, number>>((acc, [key, raw]) => {
+    if (typeof raw === "number" && Number.isFinite(raw)) {
+      acc[key] = raw;
+    }
+    return acc;
+  }, {});
+};
+
+const normalizeDepartmentMatches = (value: unknown): DepartmentMatch[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (typeof item === "string") return { department: item };
+      if (item && typeof item === "object") {
+        const row = item as Record<string, unknown>;
+        const department = typeof row.department === "string" ? row.department : "";
+        const fitScore = typeof row.fitScore === "number" ? row.fitScore : undefined;
+        return department ? { department, fitScore } : null;
+      }
+      return null;
+    })
+    .filter((item): item is DepartmentMatch => !!item)
+    .sort((a, b) => (b.fitScore ?? 0) - (a.fitScore ?? 0));
+};
+
+const normalizeGeographyMatches = (value: unknown): GeographyMatch[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (typeof item === "string") return { region: item };
+      if (item && typeof item === "object") {
+        const row = item as Record<string, unknown>;
+        const region = typeof row.region === "string" ? row.region : "";
+        const fitScore = typeof row.fitScore === "number" ? row.fitScore : undefined;
+        return region ? { region, fitScore } : null;
+      }
+      return null;
+    })
+    .filter((item): item is GeographyMatch => !!item)
+    .sort((a, b) => (b.fitScore ?? 0) - (a.fitScore ?? 0));
+};
+
 export default function DossierPublicView() {
   const { code } = useParams<{ code: string }>();
   const [pin, setPin] = useState(["", "", "", "", "", ""]);
