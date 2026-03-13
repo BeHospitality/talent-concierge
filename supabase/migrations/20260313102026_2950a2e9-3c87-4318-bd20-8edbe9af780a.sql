@@ -1,0 +1,1 @@
+UPDATE dossiers SET status = 'sent', sent_at = now(), expires_at = now() + interval '30 days' WHERE id = 'f15db328-322d-4268-bf3a-38d3f00b0a70';
