@@ -106,17 +106,20 @@ export default function DossierPublicView() {
 
     setVerifying(true);
     try {
-      const { data } = await supabase.rpc("verify_dossier_pin", {
+      const { data, error: verifyError } = await supabase.rpc("verify_dossier_pin", {
         p_unique_code: code!,
         p_pin: fullPin,
       });
+
+      if (verifyError) {
+        throw verifyError;
+      }
 
       const result = data as unknown as { valid: boolean; id: string | null };
 
       if (result?.valid) {
         setVerified(true);
         setDossierId(result.id);
-        // Track view
         await supabase.rpc("track_dossier_view", { p_dossier_id: result.id! });
       } else {
         setAttempts((a) => a + 1);
@@ -124,8 +127,11 @@ export default function DossierPublicView() {
         setPin(["", "", "", "", "", ""]);
         inputRefs.current[0]?.focus();
       }
-    } catch {
-      setError("Verification failed. Please try again.");
+    } catch (err: any) {
+      const message = err?.message?.includes("Too many attempts")
+        ? "Too many attempts. Please try again later."
+        : "Verification failed. Please try again.";
+      setError(message);
     } finally {
       setVerifying(false);
     }
