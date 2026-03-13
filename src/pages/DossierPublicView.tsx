@@ -28,37 +28,51 @@ const normalizeDimensions = (value: unknown): Record<string, number> => {
 const normalizeDepartmentMatches = (value: unknown): DepartmentMatch[] => {
   if (!Array.isArray(value)) return [];
 
-  return value
-    .map((item) => {
-      if (typeof item === "string") return { department: item };
-      if (item && typeof item === "object") {
-        const row = item as Record<string, unknown>;
-        const department = typeof row.department === "string" ? row.department : "";
-        const fitScore = typeof row.fitScore === "number" ? row.fitScore : undefined;
-        return department ? { department, fitScore } : null;
+  const normalized: DepartmentMatch[] = [];
+
+  value.forEach((item) => {
+    if (typeof item === "string") {
+      normalized.push({ department: item });
+      return;
+    }
+
+    if (item && typeof item === "object") {
+      const row = item as Record<string, unknown>;
+      const department = typeof row.department === "string" ? row.department : "";
+      const fitScore = typeof row.fitScore === "number" ? row.fitScore : undefined;
+
+      if (department) {
+        normalized.push({ department, fitScore });
       }
-      return null;
-    })
-    .filter((item): item is DepartmentMatch => !!item)
-    .sort((a, b) => (b.fitScore ?? 0) - (a.fitScore ?? 0));
+    }
+  });
+
+  return normalized.sort((a, b) => (b.fitScore ?? 0) - (a.fitScore ?? 0));
 };
 
 const normalizeGeographyMatches = (value: unknown): GeographyMatch[] => {
   if (!Array.isArray(value)) return [];
 
-  return value
-    .map((item) => {
-      if (typeof item === "string") return { region: item };
-      if (item && typeof item === "object") {
-        const row = item as Record<string, unknown>;
-        const region = typeof row.region === "string" ? row.region : "";
-        const fitScore = typeof row.fitScore === "number" ? row.fitScore : undefined;
-        return region ? { region, fitScore } : null;
+  const normalized: GeographyMatch[] = [];
+
+  value.forEach((item) => {
+    if (typeof item === "string") {
+      normalized.push({ region: item });
+      return;
+    }
+
+    if (item && typeof item === "object") {
+      const row = item as Record<string, unknown>;
+      const region = typeof row.region === "string" ? row.region : "";
+      const fitScore = typeof row.fitScore === "number" ? row.fitScore : undefined;
+
+      if (region) {
+        normalized.push({ region, fitScore });
       }
-      return null;
-    })
-    .filter((item): item is GeographyMatch => !!item)
-    .sort((a, b) => (b.fitScore ?? 0) - (a.fitScore ?? 0));
+    }
+  });
+
+  return normalized.sort((a, b) => (b.fitScore ?? 0) - (a.fitScore ?? 0));
 };
 
 export default function DossierPublicView() {
