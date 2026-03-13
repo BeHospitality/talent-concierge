@@ -133,7 +133,8 @@ export function getRetentionInsights(archetype: string | undefined, dimensions: 
   return factors;
 }
 
-export function getRoleFitNarrative(department: string, archetype: string | undefined, dimensions: Record<string, number>): string {
+export function getRoleFitNarrative(department: string | undefined, archetype: string | undefined, dimensions: Record<string, number>): string {
+  const normalizedDepartment = (department || "hospitality").trim() || "hospitality";
   const autonomy = dimensions.autonomy || 0;
   const collaboration = dimensions.collaboration || 0;
   const leadership = dimensions.leadership || 0;
@@ -147,5 +148,5 @@ export function getRoleFitNarrative(department: string, archetype: string | unde
 
   const traitStr = traits.length > 0 ? traits.slice(0, 2).join(" and ") : "their overall profile";
 
-  return `Combines ${traitStr} — making this a strong fit for ${department.toLowerCase()} roles.`;
+  return `Combines ${traitStr} — making this a strong fit for ${normalizedDepartment.toLowerCase()} roles.`;
 }

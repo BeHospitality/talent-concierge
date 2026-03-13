@@ -5,7 +5,7 @@ import { getRoleFitNarrative } from "@/utils/dossierNarratives";
 
 interface DeptMatch {
   department: string;
-  fitScore: number;
+  fitScore?: number;
 }
 
 interface Props {
@@ -18,7 +18,11 @@ interface Props {
 export function DossierRoleFit({ candidateName, departments, archetype, dimensions }: Props) {
   if (!departments || departments.length === 0) return null;
 
-  const top2 = departments.slice(0, 2);
+  const top2 = departments
+    .filter((d) => typeof d?.department === "string" && d.department.trim().length > 0)
+    .slice(0, 2);
+
+  if (top2.length === 0) return null;
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
@@ -33,7 +37,7 @@ export function DossierRoleFit({ candidateName, departments, archetype, dimensio
       <div className="grid gap-4">
         {top2.map((dept, i) => (
           <div
-            key={i}
+            key={`${dept.department}-${i}`}
             className={`p-5 rounded-xl border ${
               i === 0
                 ? "bg-primary/5 border-primary/30"

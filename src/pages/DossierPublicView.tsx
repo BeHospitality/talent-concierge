@@ -265,9 +265,9 @@ export default function DossierPublicView() {
   const content = dossierContent;
   const candidateName = content?.candidate?.full_name || "Candidate";
   const archetype = content?.prescreening?.tribe_viral_archetype as string | undefined;
-  const dimensions = (content?.prescreening?.dimension_scores as unknown as Record<string, number>) || {};
-  const deptMatches = content?.prescreening?.department_matches as unknown as { department: string; fitScore: number }[] | null;
-  const geoMatches = content?.prescreening?.geography_matches as unknown as { region: string; fitScore: number }[] | null;
+  const dimensions = normalizeDimensions(content?.prescreening?.dimension_scores);
+  const deptMatches = normalizeDepartmentMatches(content?.prescreening?.department_matches);
+  const geoMatches = normalizeGeographyMatches(content?.prescreening?.geography_matches);
 
   const strengths = getTopStrengths(dimensions, 3);
 
