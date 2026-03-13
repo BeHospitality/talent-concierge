@@ -32,7 +32,17 @@ const normalizeDepartmentMatches = (value: unknown): DepartmentMatch[] => {
 
   value.forEach((item) => {
     if (typeof item === "string") {
-      normalized.push({ department: item });
+      // Try parsing JSON strings like '{"department":"Kitchen","fitScore":67,"rank":1}'
+      try {
+        const parsed = JSON.parse(item);
+        if (parsed && typeof parsed === "object" && typeof parsed.department === "string") {
+          normalized.push({ department: parsed.department, fitScore: typeof parsed.fitScore === "number" ? parsed.fitScore : undefined });
+          return;
+        }
+      } catch {
+        // Not JSON — treat as plain department name
+      }
+      if (item.trim()) normalized.push({ department: item.trim() });
       return;
     }
 
@@ -40,10 +50,7 @@ const normalizeDepartmentMatches = (value: unknown): DepartmentMatch[] => {
       const row = item as Record<string, unknown>;
       const department = typeof row.department === "string" ? row.department : "";
       const fitScore = typeof row.fitScore === "number" ? row.fitScore : undefined;
-
-      if (department) {
-        normalized.push({ department, fitScore });
-      }
+      if (department) normalized.push({ department, fitScore });
     }
   });
 
@@ -57,7 +64,16 @@ const normalizeGeographyMatches = (value: unknown): GeographyMatch[] => {
 
   value.forEach((item) => {
     if (typeof item === "string") {
-      normalized.push({ region: item });
+      try {
+        const parsed = JSON.parse(item);
+        if (parsed && typeof parsed === "object" && typeof parsed.region === "string") {
+          normalized.push({ region: parsed.region, fitScore: typeof parsed.fitScore === "number" ? parsed.fitScore : undefined });
+          return;
+        }
+      } catch {
+        // Not JSON
+      }
+      if (item.trim()) normalized.push({ region: item.trim() });
       return;
     }
 
@@ -65,10 +81,7 @@ const normalizeGeographyMatches = (value: unknown): GeographyMatch[] => {
       const row = item as Record<string, unknown>;
       const region = typeof row.region === "string" ? row.region : "";
       const fitScore = typeof row.fitScore === "number" ? row.fitScore : undefined;
-
-      if (region) {
-        normalized.push({ region, fitScore });
-      }
+      if (region) normalized.push({ region, fitScore });
     }
   });
 
