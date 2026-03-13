@@ -12,6 +12,69 @@ import { DossierWorkingStyle } from "@/components/dossier/DossierWorkingStyle";
 import { DossierRetention } from "@/components/dossier/DossierRetention";
 import { getTopStrengths } from "@/utils/dossierNarratives";
 
+type DepartmentMatch = { department: string; fitScore?: number };
+type GeographyMatch = { region: string; fitScore?: number };
+
+const normalizeDimensions = (value: unknown): Record<string, number> => {
+  if (!value || typeof value !== "object") return {};
+  return Object.entries(value as Record<string, unknown>).reduce<Record<string, number>>((acc, [key, raw]) => {
+    if (typeof raw === "number" && Number.isFinite(raw)) {
+      acc[key] = raw;
+    }
+    return acc;
+  }, {});
+};
+
+const normalizeDepartmentMatches = (value: unknown): DepartmentMatch[] => {
+  if (!Array.isArray(value)) return [];
+
+  const normalized: DepartmentMatch[] = [];
+
+  value.forEach((item) => {
+    if (typeof item === "string") {
+      normalized.push({ department: item });
+      return;
+    }
+
+    if (item && typeof item === "object") {
+      const row = item as Record<string, unknown>;
+      const department = typeof row.department === "string" ? row.department : "";
+      const fitScore = typeof row.fitScore === "number" ? row.fitScore : undefined;
+
+      if (department) {
+        normalized.push({ department, fitScore });
+      }
+    }
+  });
+
+  return normalized.sort((a, b) => (b.fitScore ?? 0) - (a.fitScore ?? 0));
+};
+
+const normalizeGeographyMatches = (value: unknown): GeographyMatch[] => {
+  if (!Array.isArray(value)) return [];
+
+  const normalized: GeographyMatch[] = [];
+
+  value.forEach((item) => {
+    if (typeof item === "string") {
+      normalized.push({ region: item });
+      return;
+    }
+
+    if (item && typeof item === "object") {
+      const row = item as Record<string, unknown>;
+      const region = typeof row.region === "string" ? row.region : "";
+      const fitScore = typeof row.fitScore === "number" ? row.fitScore : undefined;
+
+      if (region) {
+        normalized.push({ region, fitScore });
+      }
+    }
+  });
+
+  return normalized.sort((a, b) => (b.fitScore ?? 0) - (a.fitScore ?? 0));
+};
+
 export default function DossierPublicView() {
   const { code } = useParams<{ code: string }>();
   const [pin, setPin] = useState(["", "", "", "", "", ""]);
@@ -216,9 +279,9 @@ export default function DossierPublicView() {
   const content = dossierContent;
   const candidateName = content?.candidate?.full_name || "Candidate";
   const archetype = content?.prescreening?.tribe_viral_archetype as string | undefined;
-  const dimensions = (content?.prescreening?.dimension_scores as unknown as Record<string, number>) || {};
-  const deptMatches = content?.prescreening?.department_matches as unknown as { department: string; fitScore: number }[] | null;
-  const geoMatches = content?.prescreening?.geography_matches as unknown as { region: string; fitScore: number }[] | null;
+  const dimensions = normalizeDimensions(content?.prescreening?.dimension_scores);
+  const deptMatches = normalizeDepartmentMatches(content?.prescreening?.department_matches);
+  const geoMatches = normalizeGeographyMatches(content?.prescreening?.geography_matches);
 
   const strengths = getTopStrengths(dimensions, 3);
 
