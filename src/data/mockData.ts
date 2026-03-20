@@ -197,14 +197,14 @@ export const mockCandidates: Candidate[] = [
   },
 ];
 
-// ─── Ashford Manor Demo Organization ──────────────────────────
+// ─── Harrow House Demo Organization ──────────────────────────
 export const mockOrganizations: Organization[] = [
   {
     id: "o1",
-    organization_name: "Ashford Manor Hotel",
-    org_code: "ashford-manor",
+    organization_name: "The Harrow House Hotel",
+    org_code: "harrow-house",
     contact_name: "Claire Hennessy",
-    contact_email: "manager@ashfordmanor.demo",
+    contact_email: "manager@harrowhouse.demo",
     status: "client",
     candidates_linked: 3,
     health_score: 55,
