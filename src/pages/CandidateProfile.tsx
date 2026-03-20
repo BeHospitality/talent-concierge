@@ -144,7 +144,7 @@ export default function CandidateProfile() {
     }
   };
 
-  const orgName = isDemoMode ? "Ashford Manor Hotel" : undefined;
+  const orgName = isDemoMode ? "The Harrow House Hotel" : undefined;
 
   return (
     <div className="max-w-[1600px] mx-auto">
