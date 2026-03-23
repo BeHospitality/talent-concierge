@@ -145,7 +145,7 @@ export function ProfessionalView() {
                 </div>
                 <div>
                   <p className="text-white text-sm font-medium">Tom Burke</p>
-                  <p className="text-white/60 text-xs">FOH Supervisor • 5 Years at Ashford Manor</p>
+                  <p className="text-white/60 text-xs">FOH Supervisor • 5 Years at Harrow House</p>
                 </div>
               </div>
               <span className="inline-block text-xs px-3 py-1 rounded-full mb-2" style={{ background: `${GOLD}20`, color: GOLD }}>
