@@ -104,7 +104,7 @@ export function ProfessionalView() {
             {/* Header */}
             <div className="text-center py-6">
               <p className="text-lg font-bold" style={{ color: GOLD }}>Be Connect</p>
-              <p className="text-white text-base font-semibold mt-2">Your Ashford Manor Journey</p>
+              <p className="text-white text-base font-semibold mt-2">Your Harrow House Journey</p>
               <p className="text-white/80 text-sm mt-1">Welcome, James 👋</p>
               <span
                 className="inline-block mt-3 text-xs font-semibold px-4 py-1.5 rounded-full"
