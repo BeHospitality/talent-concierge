@@ -214,7 +214,7 @@ export function ProfessionalView() {
                   { day: "Tue 4 Mar", done: false, text: "Sous Chef orientation with Tom (10am)" },
                   { day: "Wed 5 Mar", done: false, text: "First service with the kitchen team (2pm)" },
                   { day: "Thu 6 Mar", done: false, text: "Menu & ingredients walkthrough" },
-                  { day: "Fri 7 Mar", done: false, text: "End of week check-in with Tom + Aidan" },
+                  { day: "Fri 7 Mar", done: false, text: "End of week check-in with Tom + Claire" },
                 ].map((d, i) => (
                   <div key={i} className="flex items-start gap-3">
                     {d.done ? (
