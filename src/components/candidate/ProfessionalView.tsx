@@ -260,7 +260,7 @@ export function ProfessionalView() {
 
             {/* Card 6: Legacy Path */}
             <PhoneCard delay={0.6}>
-              <p className="text-white font-semibold text-sm mb-4">🌟 Your Journey at Ashford Manor</p>
+              <p className="text-white font-semibold text-sm mb-4">🌟 Your Journey at Harrow House</p>
               <div className="space-y-5 relative ml-3">
                 <div className="absolute left-[5px] top-2 bottom-2 w-px" style={{ background: `${GOLD}40` }} />
                 {[
