@@ -175,8 +175,8 @@ export function ProfessionalView() {
               </p>
               <div className="space-y-3 mb-4">
                 {[
-                  { id: "dinner", emoji: "🍽️", title: "Dinner for Two", desc: "Complimentary dinner at our Manor Restaurant for you and a guest" },
-                  { id: "stay", emoji: "🏰", title: "Manor Overnight Stay", desc: "One night in our Manor accommodation with breakfast" },
+                  { id: "dinner", emoji: "🍽️", title: "Dinner for Two", desc: "Complimentary dinner at our Restaurant for you and a guest" },
+                  { id: "stay", emoji: "🏰", title: "Overnight Stay", desc: "One night in our hotel accommodation with breakfast" },
                 ].map((opt) => (
                   <button
                     key={opt.id}
