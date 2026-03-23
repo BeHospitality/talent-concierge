@@ -132,7 +132,7 @@ export function ProfessionalView() {
                 <span className="absolute bottom-2 right-3 text-[10px] text-white/60 z-10">2:14</span>
               </div>
               <p className="text-white/50 text-[11px] mt-2 italic">
-                Aidan recorded this personally for every new team member
+                Claire recorded this personally for every new team member
               </p>
             </PhoneCard>
 
