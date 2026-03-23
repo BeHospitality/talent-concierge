@@ -207,7 +207,7 @@ export function ProfessionalView() {
 
             {/* Card 4: First Week */}
             <PhoneCard delay={0.4}>
-              <p className="text-white font-semibold text-sm mb-3">📅 Week 1 at Ashford Manor</p>
+              <p className="text-white font-semibold text-sm mb-3">📅 Week 1 at Harrow House</p>
               <div className="space-y-2.5">
                 {[
                   { day: "Mon 3 Mar", done: true, text: "Induction Day with Aidan (9am-1pm)" },
