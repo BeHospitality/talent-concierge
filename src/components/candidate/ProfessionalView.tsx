@@ -210,7 +210,7 @@ export function ProfessionalView() {
               <p className="text-white font-semibold text-sm mb-3">📅 Week 1 at Harrow House</p>
               <div className="space-y-2.5">
                 {[
-                  { day: "Mon 3 Mar", done: true, text: "Induction Day with Aidan (9am-1pm)" },
+                  { day: "Mon 3 Mar", done: true, text: "Induction Day with Claire (9am-1pm)" },
                   { day: "Tue 4 Mar", done: false, text: "Sous Chef orientation with Tom (10am)" },
                   { day: "Wed 5 Mar", done: false, text: "First service with the kitchen team (2pm)" },
                   { day: "Thu 6 Mar", done: false, text: "Menu & ingredients walkthrough" },
