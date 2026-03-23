@@ -169,7 +169,7 @@ export function ProfessionalView() {
 
             {/* Card 3: Breaking of Bread */}
             <PhoneCard delay={0.3}>
-              <p className="text-white font-semibold text-sm mb-2">🎁 A Welcome Gift from Ashford Manor</p>
+              <p className="text-white font-semibold text-sm mb-2">🎁 A Welcome Gift from Harrow House</p>
               <p className="text-white/70 text-xs mb-4">
                 Before your first shift, we'd love to welcome you properly.
               </p>
