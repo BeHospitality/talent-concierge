@@ -264,7 +264,7 @@ export function ProfessionalView() {
               <div className="space-y-5 relative ml-3">
                 <div className="absolute left-[5px] top-2 bottom-2 w-px" style={{ background: `${GOLD}40` }} />
                 {[
-                  { year: "NOW", title: "Sous Chef", desc: "Join the Ashford Manor kitchen", active: true },
+                  { year: "NOW", title: "Sous Chef", desc: "Join the Harrow House kitchen", active: true },
                   { year: "YEAR 1", title: "Senior Sous Chef", desc: "Own your section. Lead preparation." },
                   { year: "YEAR 2", title: "Chef de Partie / Head of Section", desc: "Full creative ownership of your area" },
                   { year: "YEAR 3 ⭐", title: "Head Chef", desc: "Lead the entire kitchen operation" },
