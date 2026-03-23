@@ -117,7 +117,7 @@ export function ProfessionalView() {
             {/* Card 1: Welcome Video */}
             <PhoneCard delay={0.1}>
               <p className="text-white font-semibold text-sm mb-1">A message for you</p>
-              <p className="text-white/60 text-xs mb-3">From Aidan O'Brien, General Manager</p>
+              <p className="text-white/60 text-xs mb-3">From Claire Hennessy, General Manager</p>
               <div
                 className="relative rounded-xl overflow-hidden flex items-center justify-center cursor-pointer group"
                 style={{ background: "#001530", height: 180 }}
