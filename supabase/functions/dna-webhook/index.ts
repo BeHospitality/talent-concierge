@@ -98,12 +98,16 @@ Deno.serve(async (req) => {
       .select()
       .single();
 
+    console.log("[dna-webhook] Upsert result:", JSON.stringify({ data, error }));
+
     if (error) {
-      console.error("[dna-webhook] Insert failed:", error);
+      console.error("[dna-webhook] UPSERT FAILED:", error.code, error.message, error.details, error.hint);
       return new Response(
         JSON.stringify({
-          error: "Insert failed",
-          details: error.message,
+          error: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
