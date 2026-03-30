@@ -60,97 +60,104 @@ Deno.serve(async (req) => {
   const source = (rawBody.source ?? null) as string | null;
   const completed_at = (rawBody.completed_at ?? null) as string | null;
 
-  const tier = tierMap[path ?? ""] || "Starting Out";
-
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
   try {
-    // ─── Try to find an existing candidate by email ───
+    // Validate archetype against the enum — only allow valid values
+    const validArchetypes = ["lion", "whale", "falcon"];
+    const normalisedArchetype = archetype ? archetype.toLowerCase() : null;
+    const safeArchetype = normalisedArchetype && validArchetypes.includes(normalisedArchetype)
+      ? normalisedArchetype
+      : null;
+
+    // Upsert into prescreening_data
+    const { data, error } = await supabase
+      .from("prescreening_data")
+      .upsert(
+        {
+          candidate_email: email,
+          archetype_type: archetype_type || null,
+          tribe_viral_archetype: safeArchetype,
+          tribe_viral_scores: scores || null,
+          dimension_scores: scores || null,
+          matching_results: matching_results || null,
+          candidate_tier: tierMap[path ?? ""] || "Starting Out",
+          dna_path: path || null,
+          dna_session_id: session_id || null,
+          dna_source: source || "dna-assessment",
+          completed_at: completed_at || new Date().toISOString(),
+        },
+        {
+          onConflict: "candidate_email",
+          ignoreDuplicates: false,
+        }
+      )
+      .select()
+      .single();
+
+    if (error) {
+      console.error("[dna-webhook] Insert failed:", error);
+      return new Response(
+        JSON.stringify({
+          error: "Insert failed",
+          details: error.message,
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // If candidate exists, link and mark prescreening complete
     const { data: candidate } = await supabase
       .from("candidates")
-      .select("id, full_name, organization_id")
+      .select("id, organization_id")
       .eq("email", email)
       .maybeSingle();
 
-    // Build prescreening record
-    const prescreeningRecord: Record<string, unknown> = {
-      candidate_email: email,
-      tribe_viral_archetype: archetype?.toLowerCase() || null,
-      archetype_type: archetype_type || null,
-      dimension_scores: scores || null,
-      tribe_viral_scores: scores || null,
-      matching_results: matching_results || null,
-      candidate_tier: tier,
-      dna_path: path || null,
-      dna_session_id: session_id || null,
-      dna_source: source || "dna-assessment",
-      completed_at: completed_at || new Date().toISOString(),
-    };
-
-    // If candidate exists in candidates table, link to them
     if (candidate) {
-      prescreeningRecord.candidate_id = candidate.id;
-      prescreeningRecord.organization_id = candidate.organization_id;
+      await supabase
+        .from("prescreening_data")
+        .update({
+          candidate_id: candidate.id,
+          organization_id: candidate.organization_id,
+        })
+        .eq("id", data.id);
 
-      // Also mark prescreening as complete
       await supabase
         .from("candidates")
         .update({ prescreening_complete: true })
         .eq("id", candidate.id);
     }
 
-    // Upsert into prescreening_data — always create if not found
-    const { data, error } = await supabase
-      .from("prescreening_data")
-      .upsert(prescreeningRecord, {
-        onConflict: "candidate_email",
-        ignoreDuplicates: false,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("[dna-webhook] Upsert failed:", error);
-      throw error;
-    }
-
     // Log to audit trail
     await supabase.from("audit_log").insert({
       event_type: "dna_candidate_received",
-      payload: { email, archetype, tier, path, source },
+      payload: {
+        email,
+        archetype: safeArchetype,
+        tier: tierMap[path ?? ""] || "Starting Out",
+        path,
+        source: source || "dna-assessment",
+      },
     });
 
     console.log("[dna-webhook] Prescreening upserted:", {
-      id: data?.id,
+      id: data.id,
       email,
-      archetype,
-      tier,
-      linked_candidate: candidate?.id || null,
+      archetype: safeArchetype,
     });
 
     return new Response(
       JSON.stringify({
         success: true,
-        prescreening_id: data?.id,
-        candidate_id: candidate?.id || null,
-        archetype,
-        tier,
+        id: data.id,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
     console.error("[dna-webhook] Error:", err);
-    await supabase
-      .from("audit_log")
-      .insert({
-        event_type: "dna_webhook_error",
-        payload: { email, archetype, error: String(err) },
-      })
-      .catch(() => {});
-
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
