@@ -6,13 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const tierMap: Record<string, string> = {
-  starting: "Starting Out",
-  growing: "Growing",
-  returning: "Returning",
-  advancing: "Advancing",
-};
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -37,7 +30,6 @@ Deno.serve(async (req) => {
 
   console.log("[dna-webhook] Received payload:", JSON.stringify(rawBody));
 
-  // Normalise email field (support multiple naming conventions)
   const email = (rawBody.email ?? rawBody.candidate_email ?? rawBody.candidateEmail ?? null) as string | null;
 
   if (!email) {
@@ -65,106 +57,87 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  try {
-    // Validate archetype against the enum — only allow valid values
-    const validArchetypes = ["lion", "whale", "falcon"];
-    const normalisedArchetype = archetype ? archetype.toLowerCase() : null;
-    const safeArchetype = normalisedArchetype && validArchetypes.includes(normalisedArchetype)
-      ? normalisedArchetype
-      : null;
+  const tierMap: Record<string, string> = {
+    starting: "Starting Out",
+    growing: "Growing",
+    returning: "Returning",
+    advancing: "Advancing",
+  };
 
-    // Upsert into prescreening_data
-    const { data, error } = await supabase
-      .from("prescreening_data")
-      .upsert(
-        {
-          candidate_email: email,
-          archetype_type: archetype_type || null,
-          tribe_viral_archetype: safeArchetype,
-          tribe_viral_scores: scores || null,
-          dimension_scores: scores || null,
-          matching_results: matching_results || null,
-          candidate_tier: tierMap[path ?? ""] || "Starting Out",
-          dna_path: path || null,
-          dna_session_id: session_id || null,
-          dna_source: source || "dna-assessment",
-          completed_at: completed_at || new Date().toISOString(),
-        },
-        {
-          onConflict: "candidate_email",
-          ignoreDuplicates: false,
-        }
-      )
-      .select()
-      .single();
+  const { data: record, error: upsertError } = await supabase
+    .from("prescreening_data")
+    .upsert(
+      {
+        candidate_email: email,
+        archetype_type: archetype_type || null,
+        tribe_viral_archetype: archetype ? archetype.toLowerCase() : null,
+        tribe_viral_scores: scores || null,
+        dimension_scores: scores || null,
+        matching_results: matching_results || null,
+        candidate_tier: tierMap[path ?? ""] || "Starting Out",
+        dna_path: path || null,
+        dna_session_id: session_id || null,
+        dna_source: source || "dna-assessment",
+        completed_at: completed_at || new Date().toISOString(),
+      },
+      {
+        onConflict: "candidate_email",
+        ignoreDuplicates: false,
+      }
+    )
+    .select()
+    .single();
 
-    console.log("[dna-webhook] Upsert result:", JSON.stringify({ data, error }));
+  if (upsertError) {
+    console.error(
+      "[dna-webhook] UPSERT FAILED:",
+      upsertError.code,
+      upsertError.message,
+      upsertError.details,
+      upsertError.hint
+    );
 
-    if (error) {
-      console.error("[dna-webhook] UPSERT FAILED:", error.code, error.message, error.details, error.hint);
-      return new Response(
-        JSON.stringify({
-          error: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
-        }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // If candidate exists, link and mark prescreening complete
-    const { data: candidate } = await supabase
-      .from("candidates")
-      .select("id, organization_id")
-      .eq("email", email)
-      .maybeSingle();
-
-    if (candidate) {
-      await supabase
-        .from("prescreening_data")
-        .update({
-          candidate_id: candidate.id,
-          organization_id: candidate.organization_id,
-        })
-        .eq("id", data.id);
-
-      await supabase
-        .from("candidates")
-        .update({ prescreening_complete: true })
-        .eq("id", candidate.id);
-    }
-
-    // Log to audit trail
     await supabase.from("audit_log").insert({
-      event_type: "dna_candidate_received",
+      event_type: "dna_webhook_upsert_failed",
       payload: {
         email,
-        archetype: safeArchetype,
-        tier: tierMap[path ?? ""] || "Starting Out",
-        path,
-        source: source || "dna-assessment",
+        error: upsertError.message,
+        code: upsertError.code,
       },
-    });
-
-    console.log("[dna-webhook] Prescreening upserted:", {
-      id: data.id,
-      email,
-      archetype: safeArchetype,
     });
 
     return new Response(
       JSON.stringify({
-        success: true,
-        id: data.id,
+        error: upsertError.message,
+        code: upsertError.code,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (err) {
-    console.error("[dna-webhook] Error:", err);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
+
+  await supabase.from("audit_log").insert({
+    event_type: "dna_candidate_received",
+    payload: {
+      email,
+      archetype,
+      tier: tierMap[path ?? ""] || "Starting Out",
+      path,
+      session_id,
+      source,
+      record_id: record?.id,
+    },
+  });
+
+  console.log("[dna-webhook] SUCCESS:", record?.id);
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      id: record?.id,
+      email,
+      archetype,
+      tier: tierMap[path ?? ""] || "Starting Out",
+    }),
+    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
 });
