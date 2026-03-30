@@ -1534,15 +1534,21 @@ export type Database = {
       }
       prescreening_data: {
         Row: {
+          archetype_type: string | null
           candidate_id: string
+          candidate_tier: string | null
           career_compass_milestones: Json | null
           career_compass_motivators: Json | null
           career_compass_url: string | null
           completed_at: string | null
           department_matches: string[] | null
           dimension_scores: Json | null
+          dna_path: string | null
+          dna_session_id: string | null
+          dna_source: string | null
           geography_matches: string[] | null
           id: string
+          matching_results: Json | null
           organization_id: string
           retention_risk_windows: Json | null
           sector_matches: string[] | null
@@ -1552,15 +1558,21 @@ export type Database = {
           tribe_viral_url: string | null
         }
         Insert: {
+          archetype_type?: string | null
           candidate_id: string
+          candidate_tier?: string | null
           career_compass_milestones?: Json | null
           career_compass_motivators?: Json | null
           career_compass_url?: string | null
           completed_at?: string | null
           department_matches?: string[] | null
           dimension_scores?: Json | null
+          dna_path?: string | null
+          dna_session_id?: string | null
+          dna_source?: string | null
           geography_matches?: string[] | null
           id?: string
+          matching_results?: Json | null
           organization_id: string
           retention_risk_windows?: Json | null
           sector_matches?: string[] | null
@@ -1572,15 +1584,21 @@ export type Database = {
           tribe_viral_url?: string | null
         }
         Update: {
+          archetype_type?: string | null
           candidate_id?: string
+          candidate_tier?: string | null
           career_compass_milestones?: Json | null
           career_compass_motivators?: Json | null
           career_compass_url?: string | null
           completed_at?: string | null
           department_matches?: string[] | null
           dimension_scores?: Json | null
+          dna_path?: string | null
+          dna_session_id?: string | null
+          dna_source?: string | null
           geography_matches?: string[] | null
           id?: string
+          matching_results?: Json | null
           organization_id?: string
           retention_risk_windows?: Json | null
           sector_matches?: string[] | null

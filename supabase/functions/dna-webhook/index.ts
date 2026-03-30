@@ -49,15 +49,55 @@ const SCREENING_TEMPLATE = [
 
 // ─── Normalise payload: accept both Hub and DNA app field names ───
 function normalisePayload(body: Record<string, unknown>) {
+  // Support new DNA app format (email, archetype, scores, matching_results, path, etc.)
+  // AND legacy Hub format (candidate_email, tribe_viral_archetype, dimension_scores, etc.)
+  const email = (body.email ?? body.candidate_email ?? body.candidateEmail ?? null) as string | null;
+  const candidateName = (body.candidate_name ?? body.candidateName ?? null) as string | null;
+
+  // Archetype: new format uses "archetype", legacy uses "tribe_viral_archetype"
+  const archetype = (body.archetype ?? body.tribe_viral_archetype ?? null) as string | null;
+  const archetypeType = (body.archetype_type ?? null) as string | null;
+
+  // Scores: new format uses "scores", legacy uses "dimension_scores" / "tribe_viral_scores"
+  const scores = (body.scores ?? body.dimension_scores ?? body.tribe_viral_scores ?? null) as Record<string, number> | null;
+
+  // Matching results: new format bundles into matching_results object
+  const matchingResults = (body.matching_results ?? null) as Record<string, unknown> | null;
+  const sectorMatches = (body.sectorMatches ?? body.sector_matches ?? (matchingResults as any)?.sectors ?? null) as string[] | null;
+  const geographyMatches = (body.geographyMatches ?? body.geography_matches ?? (matchingResults as any)?.geographies ?? null) as string[] | null;
+  const departmentMatches = (body.departmentMatches ?? body.department_matches ?? (matchingResults as any)?.departments ?? null) as string[] | null;
+
+  // New DNA app fields
+  const path = (body.path ?? null) as string | null;
+  const sessionId = (body.session_id ?? null) as string | null;
+  const source = (body.source ?? null) as string | null;
+  const completedAt = (body.completed_at ?? null) as string | null;
+
+  // Map path to candidate tier
+  const tierMap: Record<string, string> = {
+    starting: "Starting Out",
+    growing: "Growing",
+    returning: "Returning",
+    advancing: "Advancing",
+  };
+  const candidateTier = path ? tierMap[path] || null : null;
+
   return {
     assessment_id: (body.assessment_id ?? body.assessmentId ?? null) as string | null,
-    candidate_email: (body.candidate_email ?? body.candidateEmail ?? null) as string | null,
-    candidate_name: (body.candidate_name ?? body.candidateName ?? null) as string | null,
-    archetype: (body.archetype ?? body.tribe_viral_archetype ?? null) as string | null,
-    dimension_scores: (body.dimension_scores ?? body.tribe_viral_scores ?? null) as Record<string, number> | null,
-    sector_matches: (body.sectorMatches ?? body.sector_matches ?? null) as string[] | null,
-    geography_matches: (body.geographyMatches ?? body.geography_matches ?? null) as string[] | null,
-    department_matches: (body.departmentMatches ?? body.department_matches ?? null) as string[] | null,
+    candidate_email: email,
+    candidate_name: candidateName,
+    archetype,
+    archetype_type: archetypeType,
+    dimension_scores: scores,
+    matching_results: matchingResults,
+    sector_matches: sectorMatches,
+    geography_matches: geographyMatches,
+    department_matches: departmentMatches,
+    path,
+    session_id: sessionId,
+    source,
+    completed_at: completedAt,
+    candidate_tier: candidateTier,
   };
 }
 
@@ -88,27 +128,31 @@ Deno.serve(async (req) => {
     );
   }
 
+  console.log("[dna-webhook] Received payload:", JSON.stringify(rawBody));
+
   const payload = normalisePayload(rawBody);
 
-  // Validate required fields
-  if (!payload.candidate_email || !payload.archetype || !payload.dimension_scores) {
+  // Validate required fields — only email is strictly required now
+  if (!payload.candidate_email) {
     return new Response(
       JSON.stringify({
-        error: "Missing required fields",
-        required: ["candidate_email OR candidateEmail", "archetype OR tribe_viral_archetype", "dimension_scores OR tribe_viral_scores"],
+        error: "Missing required field: email",
+        required: ["email OR candidate_email OR candidateEmail"],
         received_keys: Object.keys(rawBody),
       }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  // Validate archetype value
-  const validArchetypes = ["lion", "whale", "falcon"];
-  if (!validArchetypes.includes(payload.archetype.toLowerCase())) {
-    return new Response(
-      JSON.stringify({ error: `Invalid archetype. Must be one of: ${validArchetypes.join(", ")}` }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+  // Validate archetype value if provided
+  if (payload.archetype) {
+    const validArchetypes = ["lion", "whale", "falcon"];
+    if (!validArchetypes.includes(payload.archetype.toLowerCase())) {
+      return new Response(
+        JSON.stringify({ error: `Invalid archetype. Must be one of: ${validArchetypes.join(", ")}` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
   }
 
   try {
@@ -145,13 +189,20 @@ Deno.serve(async (req) => {
     const prescreeningRecord: Record<string, unknown> = {
       candidate_id: candidate.id,
       organization_id: candidate.organization_id,
-      tribe_viral_archetype: payload.archetype.toLowerCase(),
+      tribe_viral_archetype: payload.archetype?.toLowerCase() || null,
       tribe_viral_scores: payload.dimension_scores,
       dimension_scores: payload.dimension_scores,
       sector_matches: payload.sector_matches,
       geography_matches: payload.geography_matches,
       department_matches: payload.department_matches,
-      completed_at: new Date().toISOString(),
+      completed_at: payload.completed_at || new Date().toISOString(),
+      // New DNA app fields
+      archetype_type: payload.archetype_type || null,
+      dna_session_id: payload.session_id || null,
+      candidate_tier: payload.candidate_tier || null,
+      dna_source: payload.source || null,
+      dna_path: payload.path || null,
+      matching_results: payload.matching_results || null,
     };
 
     const { error: upsertError } = await supabase
@@ -233,19 +284,38 @@ Deno.serve(async (req) => {
         candidate_id: candidate.id,
         candidate_email: payload.candidate_email,
         archetype: payload.archetype,
+        archetype_type: payload.archetype_type,
         journey_id: journeyId,
         sector_matches: payload.sector_matches,
         geography_matches: payload.geography_matches,
         department_matches: payload.department_matches,
+        path: payload.path,
+        session_id: payload.session_id,
+        source: payload.source,
+        candidate_tier: payload.candidate_tier,
         status: "success",
       },
     });
 
+    console.log("[dna-webhook] Candidate processed:", {
+      id: candidate.id,
+      email: payload.candidate_email,
+      archetype: payload.archetype,
+      tier: payload.candidate_tier,
+    });
+
     return new Response(
-      JSON.stringify({ success: true, candidate_id: candidate.id, journey_id: journeyId }),
+      JSON.stringify({
+        success: true,
+        candidate_id: candidate.id,
+        journey_id: journeyId,
+        archetype: payload.archetype,
+        tier: payload.candidate_tier,
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    console.error("[dna-webhook] Error:", err);
     await supabase.from("audit_log").insert({
       event_type: "dna_webhook_received",
       payload: { candidate_email: payload.candidate_email, archetype: payload.archetype, status: "error", error: String(err) },
