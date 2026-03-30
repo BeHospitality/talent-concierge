@@ -1535,7 +1535,8 @@ export type Database = {
       prescreening_data: {
         Row: {
           archetype_type: string | null
-          candidate_id: string
+          candidate_email: string | null
+          candidate_id: string | null
           candidate_tier: string | null
           career_compass_milestones: Json | null
           career_compass_motivators: Json | null
@@ -1549,7 +1550,7 @@ export type Database = {
           geography_matches: string[] | null
           id: string
           matching_results: Json | null
-          organization_id: string
+          organization_id: string | null
           retention_risk_windows: Json | null
           sector_matches: string[] | null
           six_month_checkin_date: string | null
@@ -1559,7 +1560,8 @@ export type Database = {
         }
         Insert: {
           archetype_type?: string | null
-          candidate_id: string
+          candidate_email?: string | null
+          candidate_id?: string | null
           candidate_tier?: string | null
           career_compass_milestones?: Json | null
           career_compass_motivators?: Json | null
@@ -1573,7 +1575,7 @@ export type Database = {
           geography_matches?: string[] | null
           id?: string
           matching_results?: Json | null
-          organization_id: string
+          organization_id?: string | null
           retention_risk_windows?: Json | null
           sector_matches?: string[] | null
           six_month_checkin_date?: string | null
@@ -1585,7 +1587,8 @@ export type Database = {
         }
         Update: {
           archetype_type?: string | null
-          candidate_id?: string
+          candidate_email?: string | null
+          candidate_id?: string | null
           candidate_tier?: string | null
           career_compass_milestones?: Json | null
           career_compass_motivators?: Json | null
@@ -1599,7 +1602,7 @@ export type Database = {
           geography_matches?: string[] | null
           id?: string
           matching_results?: Json | null
-          organization_id?: string
+          organization_id?: string | null
           retention_risk_windows?: Json | null
           sector_matches?: string[] | null
           six_month_checkin_date?: string | null
