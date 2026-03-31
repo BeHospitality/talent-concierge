@@ -20,7 +20,7 @@ import NotFound from "./pages/NotFound";
 import InsightsLogin from "./pages/InsightsLogin";
 import InsightsReport from "./pages/InsightsReport";
 import DossierPublicView from "./pages/DossierPublicView";
-import PocketAgent from "@/components/PocketAgent";
+
 
 const queryClient = new QueryClient();
 
@@ -79,7 +79,7 @@ const App = () => (
             <Route path="/*" element={<ProtectedRoutes />} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
-          <PocketAgent context={{ page: "portal" }} />
+          
         </BrowserRouter>
       </DemoModeProvider>
     </TooltipProvider>
