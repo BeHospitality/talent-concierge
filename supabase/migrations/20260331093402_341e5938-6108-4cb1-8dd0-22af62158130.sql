@@ -1,0 +1,1 @@
+ALTER TABLE prescreening_data ADD COLUMN IF NOT EXISTS first_name text;
