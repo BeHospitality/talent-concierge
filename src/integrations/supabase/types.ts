@@ -1547,6 +1547,7 @@ export type Database = {
           dna_path: string | null
           dna_session_id: string | null
           dna_source: string | null
+          first_name: string | null
           geography_matches: string[] | null
           id: string
           matching_results: Json | null
@@ -1572,6 +1573,7 @@ export type Database = {
           dna_path?: string | null
           dna_session_id?: string | null
           dna_source?: string | null
+          first_name?: string | null
           geography_matches?: string[] | null
           id?: string
           matching_results?: Json | null
@@ -1599,6 +1601,7 @@ export type Database = {
           dna_path?: string | null
           dna_session_id?: string | null
           dna_source?: string | null
+          first_name?: string | null
           geography_matches?: string[] | null
           id?: string
           matching_results?: Json | null

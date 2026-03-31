@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
 
     const record = {
       candidate_email: email,
+      first_name: body.first_name || null,
       archetype_type: body.archetype_type || null,
       tribe_viral_archetype: body.archetype
         ? body.archetype.toLowerCase()
