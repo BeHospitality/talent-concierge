@@ -20,7 +20,7 @@ import NotFound from "./pages/NotFound";
 import InsightsLogin from "./pages/InsightsLogin";
 import InsightsReport from "./pages/InsightsReport";
 import DossierPublicView from "./pages/DossierPublicView";
-import PocketAgent from "@/components/PocketAgent";
+
 
 const queryClient = new QueryClient();
 
