@@ -79,7 +79,7 @@ const App = () => (
             <Route path="/*" element={<ProtectedRoutes />} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
-          <PocketAgent context={{ page: "portal" }} />
+          
         </BrowserRouter>
       </DemoModeProvider>
     </TooltipProvider>
