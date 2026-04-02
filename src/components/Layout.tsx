@@ -147,7 +147,22 @@ export default function Layout({ children, onSearch }: LayoutProps) {
         </div>
       </header>
 
-      <main className="p-6">{children}</main>
+      <main className="p-6 pb-16">{children}</main>
+
+      <footer className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-2.5" style={{ background: '#0a1020', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <span className="text-[11px] text-muted-foreground" style={{ fontFamily: 'DM Sans' }}>
+          Be Connect — bē Hospitality Solutions Ltd
+        </span>
+        <a
+          href="https://be.ie/privacy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[11px] underline"
+          style={{ color: '#008C72', fontFamily: 'DM Sans' }}
+        >
+          Privacy Notice
+        </a>
+      </footer>
     </div>
   );
 }
