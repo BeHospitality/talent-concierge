@@ -77,7 +77,6 @@ const App = () => (
             <Route path="/insights/:accessCode" element={<InsightsLogin />} />
             <Route path="/insights/:accessCode/report" element={<InsightsReport />} />
             <Route path="/*" element={<ProtectedRoutes />} />
-            <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
           
         </BrowserRouter>
