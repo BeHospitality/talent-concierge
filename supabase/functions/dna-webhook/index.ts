@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
       candidateId = existingCandidate.id;
     } else {
       // Resolve organization: use org_code from payload, or fall back to Portal Unassigned
-      let orgId = PORTAL_UNASSIGNED_ORG_ID;
+      let orgId = BE_CONNECT_PORTAL_ORG_ID;
       if (body.org_code) {
         const { data: org } = await supabase
           .from("organizations")
