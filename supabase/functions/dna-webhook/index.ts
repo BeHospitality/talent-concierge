@@ -6,6 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const PORTAL_UNASSIGNED_ORG_ID = "2deabbf5-6223-4c77-831c-b87b90d17ee6";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -59,7 +61,7 @@ Deno.serve(async (req) => {
       portal_source: body.source || null,
     };
 
-    // Check if row exists
+    // --- Upsert prescreening_data ---
     const { data: existing } = await supabase
       .from("prescreening_data")
       .select("id")
@@ -68,7 +70,6 @@ Deno.serve(async (req) => {
 
     let result;
     if (existing) {
-      // Update existing row
       const { data, error } = await supabase
         .from("prescreening_data")
         .update(record)
@@ -78,7 +79,6 @@ Deno.serve(async (req) => {
       if (error) throw error;
       result = data;
     } else {
-      // Insert new row
       const { data, error } = await supabase
         .from("prescreening_data")
         .insert(record)
@@ -88,6 +88,60 @@ Deno.serve(async (req) => {
       result = data;
     }
 
+    // --- Ensure candidate record exists ---
+    let candidateId: string | null = null;
+
+    const { data: existingCandidate } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (existingCandidate) {
+      candidateId = existingCandidate.id;
+    } else {
+      // Resolve organization: use org_code from payload, or fall back to Portal Unassigned
+      let orgId = PORTAL_UNASSIGNED_ORG_ID;
+      if (body.org_code) {
+        const { data: org } = await supabase
+          .from("organizations")
+          .select("id")
+          .eq("org_code", body.org_code)
+          .maybeSingle();
+        if (org) orgId = org.id;
+      }
+
+      const candidateName = body.first_name || email.split("@")[0];
+
+      const { data: newCandidate, error: candError } = await supabase
+        .from("candidates")
+        .insert({
+          full_name: candidateName,
+          email: email,
+          organization_id: orgId,
+          current_stage: "pre_screening",
+          prescreening_complete: true,
+          referral_source: body.source || "portal",
+        })
+        .select("id")
+        .single();
+
+      if (candError) {
+        console.error("[dna-webhook] Candidate insert failed:", candError);
+      } else if (newCandidate) {
+        candidateId = newCandidate.id;
+      }
+    }
+
+    // Link prescreening_data to candidate
+    if (candidateId) {
+      await supabase
+        .from("prescreening_data")
+        .update({ candidate_id: candidateId })
+        .eq("candidate_email", email);
+    }
+
+    // --- Audit log ---
     await supabase.from("audit_log").insert({
       event_type: "dna_candidate_received",
       payload: {
@@ -97,6 +151,7 @@ Deno.serve(async (req) => {
         path: body.path,
         source: body.source,
         record_id: result?.id,
+        candidate_id: candidateId,
       },
     });
 
@@ -104,6 +159,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         id: result?.id,
+        candidate_id: candidateId,
         email,
         archetype: body.archetype,
       }),
