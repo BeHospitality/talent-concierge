@@ -52,6 +52,11 @@ Deno.serve(async (req) => {
       dna_session_id: body.session_id || null,
       dna_source: body.source || "dna-assessment",
       completed_at: body.completed_at || new Date().toISOString(),
+      ethics_signed: body.ethics_signed || false,
+      ethics_signed_at: body.ethics_signed_at || null,
+      video_url: body.video_url || null,
+      video_uploaded_at: body.video_uploaded_at || null,
+      portal_source: body.source || null,
     };
 
     // Check if row exists
