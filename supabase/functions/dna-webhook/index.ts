@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const PORTAL_UNASSIGNED_ORG_ID = "2deabbf5-6223-4c77-831c-b87b90d17ee6";
+const BE_CONNECT_PORTAL_ORG_ID = "2deabbf5-6223-4c77-831c-b87b90d17ee6";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
