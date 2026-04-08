@@ -141,6 +141,38 @@ Deno.serve(async (req) => {
         .eq("candidate_email", email);
     }
 
+    // --- Sync video_url to candidates.video_clips ---
+    if (body.video_url && candidateId) {
+      const { data: candidateRecord } = await supabase
+        .from("candidates")
+        .select("id, video_clips")
+        .eq("id", candidateId)
+        .maybeSingle();
+
+      if (candidateRecord) {
+        const newClip = {
+          id: crypto.randomUUID(),
+          title: "Introduction",
+          url: body.video_url,
+          uploaded_at: body.video_uploaded_at || new Date().toISOString(),
+        };
+
+        const existingClips: any[] = candidateRecord.video_clips || [];
+        const alreadyExists = existingClips.some(
+          (c: any) => c.url === body.video_url
+        );
+
+        if (!alreadyExists) {
+          const updatedClips = [...existingClips, newClip];
+          await supabase
+            .from("candidates")
+            .update({ video_clips: updatedClips })
+            .eq("id", candidateId);
+          console.log("[dna-webhook] video_clips updated for:", email);
+        }
+      }
+    }
+
     // --- Audit log ---
     await supabase.from("audit_log").insert({
       event_type: "dna_candidate_received",
