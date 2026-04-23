@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Lock, ShieldCheck, AlertTriangle, FileText, Download, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DossierHero } from "@/components/dossier/DossierHero";
+import { DossierDNAProfile } from "@/components/dossier/DossierDNAProfile";
 import { DossierStrengths } from "@/components/dossier/DossierStrengths";
 import { DossierRoleFit } from "@/components/dossier/DossierRoleFit";
 import { DossierWorkingStyle } from "@/components/dossier/DossierWorkingStyle";
@@ -322,6 +323,17 @@ export default function DossierPublicView() {
           role={content?.dossier?.role}
           department={content?.dossier?.department}
           archetype={archetype}
+        />
+
+        {/* DNA Profile — second section, before strengths */}
+        <DossierDNAProfile
+          archetype={archetype}
+          archetypeName={(content?.prescreening as any)?.archetype_type}
+          dimensions={dimensions}
+          sectorMatchesRaw={(content?.prescreening as any)?.sector_matches}
+          departmentMatchesRaw={content?.prescreening?.department_matches}
+          geographyMatchesRaw={content?.prescreening?.geography_matches}
+          completedAt={(content?.prescreening as any)?.completed_at}
         />
 
         {/* Strengths & Traits */}
