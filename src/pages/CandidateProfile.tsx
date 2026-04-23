@@ -9,9 +9,10 @@ import {
   FileSignature, CheckSquare, Users, Activity, GraduationCap,
   Home, StickyNote, MapPin, Phone, Mail, ExternalLink, Trash2,
   Edit, Plus, Send, Link as LinkIcon, X, Video, Upload, Play,
-  Shield, Zap
+  Shield, Zap, Brain
 } from "lucide-react";
 import { PreScreeningSection } from "@/components/candidate/PreScreeningSection";
+import { DNAProfileSection } from "@/components/candidate/DNAProfileSection";
 import { BuddyMatchingSection } from "@/components/candidate/BuddyMatchingSection";
 import { PlacementRiskAlert } from "@/components/candidate/PlacementRiskAlert";
 import { JourneyTimeline } from "@/components/journey/JourneyTimeline";
@@ -47,6 +48,7 @@ const sidebarItems = [
   { id: "personal", label: "Personal Info", icon: User },
   { id: "journey", label: "Journey", icon: MapPin },
   { id: "video", label: "Video Profile", icon: Video },
+  { id: "dna", label: "DNA Profile", icon: Brain },
   { id: "prescreening", label: "Pre-Screening", icon: ClipboardCheck },
   { id: "dossier", label: "Dossier", icon: FileText },
   { id: "interviews", label: "Interviews", icon: CalendarDays },
@@ -251,6 +253,7 @@ export default function CandidateProfile() {
             </div>
           )}
           {activeSection === "video" && <VideoProfileSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
+          {activeSection === "dna" && <DNAProfileSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
           {activeSection === "prescreening" && <PreScreeningSection candidate={candidate} isDemoMode={isDemoMode} onUpdate={!isDemoMode ? handleUpdate : undefined} />}
           {activeSection === "dossier" && <DossierSection candidate={candidate} isDemoMode={isDemoMode} />}
           {activeSection === "interviews" && <InterviewSection candidateId={candidate.id} isDemoMode={isDemoMode} />}
