@@ -39,6 +39,38 @@ Deno.serve(async (req) => {
       advancing: "Advancing",
     };
 
+    // Derive structured fields from matching_results when top-level scores
+    // are not provided. The DNA app sends the full payload nested inside
+    // matching_results (comprehensiveScores, sectorMatches, etc.).
+    const mr = body.matching_results || {};
+    const comprehensive = mr.comprehensiveScores || null;
+    const sectorMatches = Array.isArray(mr.sectorMatches) ? mr.sectorMatches : null;
+    const departmentMatches = Array.isArray(mr.departmentMatches) ? mr.departmentMatches : null;
+    const geographyMatches = Array.isArray(mr.geographyMatches) ? mr.geographyMatches : null;
+
+    // dimension_scores: prefer explicit body.scores, else comprehensiveScores
+    const dimensionScores = body.scores || comprehensive || null;
+
+    // tribe_viral_scores: prefer explicit body.tribe_scores / body.scores,
+    // else fall back to a single-archetype map derived from the named archetype
+    let tribeScores = body.tribe_scores || null;
+    if (!tribeScores && body.archetype && comprehensive) {
+      // Use top dimension as a proxy weight if no explicit archetype scores exist
+      tribeScores = { [String(body.archetype).toLowerCase()]: 100 };
+    }
+
+    // Convert rich match arrays into string arrays for the *_matches columns
+    // while preserving full objects in matching_results.
+    const sectorMatchStrings = sectorMatches
+      ? sectorMatches.map((s: any) => JSON.stringify(s))
+      : null;
+    const departmentMatchStrings = departmentMatches
+      ? departmentMatches.map((d: any) => JSON.stringify(d))
+      : null;
+    const geographyMatchStrings = geographyMatches
+      ? geographyMatches.map((g: any) => JSON.stringify(g))
+      : null;
+
     const record = {
       candidate_email: email,
       first_name: body.first_name || null,
@@ -46,9 +78,12 @@ Deno.serve(async (req) => {
       tribe_viral_archetype: body.archetype
         ? body.archetype.toLowerCase()
         : null,
-      tribe_viral_scores: body.scores || null,
-      dimension_scores: body.scores || null,
+      tribe_viral_scores: tribeScores,
+      dimension_scores: dimensionScores,
       matching_results: body.matching_results || null,
+      sector_matches: sectorMatchStrings,
+      department_matches: departmentMatchStrings,
+      geography_matches: geographyMatchStrings,
       candidate_tier: tierMap[body.path] || null,
       dna_path: body.path || null,
       dna_session_id: body.session_id || null,
