@@ -131,7 +131,7 @@ export default function DossierPublicView() {
 
       const { data: prescreening } = await supabase
         .from("prescreening_data")
-        .select("tribe_viral_archetype, dimension_scores, sector_matches, geography_matches, department_matches")
+        .select("tribe_viral_archetype, archetype_type, dimension_scores, sector_matches, geography_matches, department_matches, completed_at")
         .eq("candidate_id", dossier.candidate_id!)
         .single();
 
