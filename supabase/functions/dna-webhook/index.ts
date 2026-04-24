@@ -96,32 +96,13 @@ Deno.serve(async (req) => {
       portal_source: body.source || null,
     };
 
-    // --- Upsert prescreening_data ---
-    const { data: existing } = await supabase
+    // --- Upsert prescreening_data (race-safe on candidate_email) ---
+    const { data: result, error: upsertError } = await supabase
       .from("prescreening_data")
-      .select("id")
-      .eq("candidate_email", email)
-      .maybeSingle();
-
-    let result;
-    if (existing) {
-      const { data, error } = await supabase
-        .from("prescreening_data")
-        .update(record)
-        .eq("candidate_email", email)
-        .select()
-        .single();
-      if (error) throw error;
-      result = data;
-    } else {
-      const { data, error } = await supabase
-        .from("prescreening_data")
-        .insert(record)
-        .select()
-        .single();
-      if (error) throw error;
-      result = data;
-    }
+      .upsert(record, { onConflict: "candidate_email" })
+      .select()
+      .single();
+    if (upsertError) throw upsertError;
 
     // --- Ensure candidate record exists ---
     let candidateId: string | null = null;
