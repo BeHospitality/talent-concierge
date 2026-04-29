@@ -15,6 +15,15 @@ import { sendTransactionalEmail, logEmailSkipped } from "../_shared/brevo.ts";
 
 const ENDPOINT = "concierge-arrival";
 
+// Email #2 attention-management gate (Board directive, 29 Apr 2026):
+// Suppress Email #2 if Email #1 fired less than EMAIL_2_RECENT_DNA_THRESHOLD_MINUTES
+// minutes ago. Rationale: a candidate who captures DNA reveal email
+// and immediately clicks through to /concierge is already in the app —
+// a second welcome email in their inbox 60 seconds later is noise,
+// not value. Email #2 becomes a re-engagement trigger for candidates
+// who arrive at /concierge AFTER wandering off.
+const EMAIL_2_RECENT_DNA_THRESHOLD_MINUTES = 20;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -102,16 +111,69 @@ Deno.serve(async (req) => {
     });
 
     if (candidate.communicationStatus === "auto_b2c_active") {
-      await sendTransactionalEmail(supabase, {
-        templateKey: "b2c_email_2",
-        recipientEmail: email,
-        candidateId: candidate.candidateId,
-        sourceEndpoint: ENDPOINT,
-        emailNumber: 2,
-        mergeParams: {
-          first_name: candidate.firstName || "there",
-        },
-      });
+      // Recency gate: check most recent step 1 (dna_reveal_email_captured)
+      const { data: step1Rows } = await supabase
+        .from("candidate_step_log")
+        .select("completed_at")
+        .eq("candidate_email", email)
+        .eq("journey_type", candidate.journeyType)
+        .eq("step_number", 1)
+        .order("completed_at", { ascending: false })
+        .limit(1);
+
+      const step1 = step1Rows?.[0];
+      let suppressForRecency = false;
+      let minutesSinceStep1: number | null = null;
+
+      if (step1?.completed_at) {
+        const completedMs = new Date(step1.completed_at).getTime();
+        const nowMs = Date.now();
+        // Future timestamp (clock skew) → treat as 0 minutes elapsed → suppress
+        const diffMs = Math.max(0, nowMs - completedMs);
+        minutesSinceStep1 = diffMs / 60000;
+        if (minutesSinceStep1 < EMAIL_2_RECENT_DNA_THRESHOLD_MINUTES) {
+          suppressForRecency = true;
+        }
+      } else {
+        // No step 1 found (e.g., magic-link arrival) — default to firing.
+        await supabase.from("audit_log").insert({
+          event_type: "email_recency_gate_no_step1",
+          payload: {
+            endpoint: ENDPOINT,
+            candidate_email: email,
+            candidate_id: candidate.candidateId,
+            email_number: 2,
+            note: "No step 1 row found; recency gate not applicable, proceeding to send.",
+          },
+        });
+      }
+
+      if (suppressForRecency) {
+        await supabase.from("audit_log").insert({
+          event_type: "email_skipped_recency",
+          payload: {
+            endpoint: ENDPOINT,
+            candidate_email: email,
+            candidate_id: candidate.candidateId,
+            email_number: 2,
+            reason: "recent_dna_completion",
+            threshold_minutes: EMAIL_2_RECENT_DNA_THRESHOLD_MINUTES,
+            minutes_since_step_1: minutesSinceStep1,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      } else {
+        await sendTransactionalEmail(supabase, {
+          templateKey: "b2c_email_2",
+          recipientEmail: email,
+          candidateId: candidate.candidateId,
+          sourceEndpoint: ENDPOINT,
+          emailNumber: 2,
+          mergeParams: {
+            first_name: candidate.firstName || "there",
+          },
+        });
+      }
     } else {
       await logEmailSkipped(supabase, {
         templateKey: "b2c_email_2",
