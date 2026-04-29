@@ -10,7 +10,9 @@ import {
   resolveCandidate,
   writeStepLog,
   ALLOWED_JOURNEY_TYPES,
+  BE_CONNECT_PORTAL_ORG_ID,
 } from "../_shared/candidates.ts";
+import { sendTransactionalEmail, logEmailSkipped } from "../_shared/brevo.ts";
 
 const ENDPOINT = "dna-reveal-email-captured";
 
