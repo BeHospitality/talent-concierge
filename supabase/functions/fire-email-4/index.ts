@@ -187,6 +187,19 @@ async function handle(supabase: any, body: any, operatorUserId: string | null): 
       .eq("id", candidate.id);
   }
 
+  // Audit (manual fire) so the Career Agent Controls panel reflects this.
+  await supabase.from("audit_log").insert({
+    event_type: "email_sent_manual",
+    payload: {
+      endpoint: ENDPOINT, email_number: 4,
+      candidate_id: candidate.id, candidate_email: candidate.email,
+      operator_user_id: operatorUserId,
+      brevo_message_id: sendResult.messageId ?? null,
+      ok: sendResult.ok, forced: force,
+      error: sendResult.ok ? null : sendResult.error,
+    },
+  });
+
   return new Response(
     JSON.stringify({
       success: sendResult.ok,
