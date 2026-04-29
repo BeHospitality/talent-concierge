@@ -238,6 +238,24 @@ export default function CandidateProfile() {
             </div>
           </div>
 
+          {/* Career Agent Controls (admin-only, live mode only) */}
+          {!isDemoMode && isAdmin && (() => {
+            const dbRow = dbCandidates.find((c) => c.id === candidate.id) as any;
+            return (
+              <div className="mb-6">
+                <CareerAgentControls
+                  candidate={{
+                    id: candidate.id,
+                    full_name: candidate.full_name,
+                    email: candidate.email,
+                    archetype: (candidate as any).archetype ?? null,
+                    current_journey_type: dbRow?.current_journey_type ?? "h2b_phase1_screening",
+                  }}
+                />
+              </div>
+            );
+          })()}
+
           {/* Journey Progress Card (shown on all sections except journey itself) */}
           {!isDemoMode && activeSection !== "journey" && (
             <JourneyProgressCard candidateId={candidate.id} />
