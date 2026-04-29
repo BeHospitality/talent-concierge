@@ -53,6 +53,23 @@ Deno.serve(async (req) => {
     return badRequest({ error: "Invalid JSON body" });
   }
 
+  try {
+    return await handle(supabase, body);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[${ENDPOINT}] uncaught:`, msg);
+    await supabase.from("audit_log").insert({
+      event_type: "webhook_db_error",
+      payload: { endpoint: ENDPOINT, error: msg.slice(0, 300) },
+    });
+    return new Response(JSON.stringify({ error: "Internal error", detail: msg.slice(0, 300) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
+
+async function handle(supabase: any, body: any): Promise<Response> {
   const candidateId = body.candidate_id;
   const force = body.force === true;
   if (!candidateId || typeof candidateId !== "string") {
