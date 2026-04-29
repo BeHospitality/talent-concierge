@@ -218,6 +218,60 @@ export type Database = {
           },
         ]
       }
+      candidate_preferences: {
+        Row: {
+          candidate_email: string
+          candidate_id: string | null
+          captured_at: string
+          created_at: string
+          extraction_metadata: Json | null
+          id: string
+          journey_type: string
+          preferences: Json
+          request_id: string | null
+          source: string
+        }
+        Insert: {
+          candidate_email: string
+          candidate_id?: string | null
+          captured_at?: string
+          created_at?: string
+          extraction_metadata?: Json | null
+          id?: string
+          journey_type?: string
+          preferences: Json
+          request_id?: string | null
+          source: string
+        }
+        Update: {
+          candidate_email?: string
+          candidate_id?: string | null
+          captured_at?: string
+          created_at?: string
+          extraction_metadata?: Json | null
+          id?: string
+          journey_type?: string
+          preferences?: Json
+          request_id?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_preferences_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_preferences_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidate_step_log: {
         Row: {
           assessment_id: string | null
