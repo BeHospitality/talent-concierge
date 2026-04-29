@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    return await handle(supabase, body);
+    return await handle(supabase, body, auth.operatorUserId);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[${ENDPOINT}] uncaught:`, msg);
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
   }
 });
 
-async function handle(supabase: any, body: any): Promise<Response> {
+async function handle(supabase: any, body: any, operatorUserId: string | null): Promise<Response> {
   const candidateId = body.candidate_id;
   const force = body.force === true;
   if (!candidateId || typeof candidateId !== "string") {
