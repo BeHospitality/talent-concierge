@@ -202,4 +202,5 @@ async function handle(supabase: any, body: any): Promise<Response> {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     },
   );
-});
+}
+
