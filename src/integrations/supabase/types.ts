@@ -179,9 +179,75 @@ export type Database = {
           },
         ]
       }
+      candidate_step_log: {
+        Row: {
+          assessment_id: string | null
+          candidate_email: string
+          candidate_id: string | null
+          completed_at: string
+          id: string
+          journey_type: string
+          organization_id: string | null
+          payload: Json | null
+          source: string
+          step_name: string
+          step_number: number
+        }
+        Insert: {
+          assessment_id?: string | null
+          candidate_email: string
+          candidate_id?: string | null
+          completed_at?: string
+          id?: string
+          journey_type?: string
+          organization_id?: string | null
+          payload?: Json | null
+          source: string
+          step_name: string
+          step_number: number
+        }
+        Update: {
+          assessment_id?: string | null
+          candidate_email?: string
+          candidate_id?: string | null
+          completed_at?: string
+          id?: string
+          journey_type?: string
+          organization_id?: string | null
+          payload?: Json | null
+          source?: string
+          step_name?: string
+          step_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_step_log_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_step_log_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_step_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidates: {
         Row: {
+          communication_status: string
           created_at: string
+          current_journey_type: string
           current_location: string | null
           current_stage: Database["public"]["Enums"]["candidate_stage"]
           days_in_stage: number
@@ -205,7 +271,9 @@ export type Database = {
           video_clips: Json | null
         }
         Insert: {
+          communication_status?: string
           created_at?: string
+          current_journey_type?: string
           current_location?: string | null
           current_stage?: Database["public"]["Enums"]["candidate_stage"]
           days_in_stage?: number
@@ -229,7 +297,9 @@ export type Database = {
           video_clips?: Json | null
         }
         Update: {
+          communication_status?: string
           created_at?: string
+          current_journey_type?: string
           current_location?: string | null
           current_stage?: Database["public"]["Enums"]["candidate_stage"]
           days_in_stage?: number
