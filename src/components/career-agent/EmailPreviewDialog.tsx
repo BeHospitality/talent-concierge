@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 
 export interface EmailPreviewCandidate {
   id: string;
@@ -60,7 +59,6 @@ function render(template: string, params: Record<string, string>): string {
 
 export function EmailPreviewDialog({ emailNumber, candidate, open, onOpenChange, onSent }: Props) {
   const [sending, setSending] = useState(false);
-  const { user } = useAuth();
   const meta = EMAIL_META[emailNumber];
 
   const firstName = deriveFirstName(candidate.full_name, candidate.email);
