@@ -29,6 +29,9 @@ export interface ResolveCandidateResult {
   organizationId: string | null;
   journeyType: string;
   created: boolean;
+  communicationStatus: string;
+  firstName: string | null;
+  email: string;
 }
 
 /**
