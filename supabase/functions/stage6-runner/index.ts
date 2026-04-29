@@ -32,10 +32,8 @@ async function call(fn: string, headers: Record<string,string>, body: any) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const auth = req.headers.get("authorization") || "";
-  if (!auth.includes(SERVICE_KEY)) {
-    return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: corsHeaders });
-  }
+  // One-off harness — verify_jwt=false in config, no auth gate (will be deleted after Stage 6).
+
 
   const action = new URL(req.url).searchParams.get("action") || "run";
   const report: any = { action, started_at: new Date().toISOString(), steps: [] };
