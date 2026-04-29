@@ -27,6 +27,8 @@ import { MOOD_EMOJIS, MOOD_LABELS, CONFIDENCE_EMOJIS, CONFIDENCE_LABELS, TEAM_EM
 import { TeamCompatibilityPreview } from "@/components/candidate/TeamCompatibilityPreview";
 import { ProfessionalView } from "@/components/candidate/ProfessionalView";
 import { ResumeUploadSection } from "@/components/candidate/ResumeUploadSection";
+import { CareerAgentControls } from "@/components/career-agent/CareerAgentControls";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
