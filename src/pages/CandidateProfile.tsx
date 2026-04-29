@@ -87,6 +87,7 @@ export default function CandidateProfile() {
   const { id } = useParams();
   const { isDemoMode } = useDemoMode();
   const { candidates: dbCandidates, deleteCandidate, updateCandidate } = useCandidates();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("personal");
 
