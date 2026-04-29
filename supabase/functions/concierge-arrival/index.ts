@@ -11,6 +11,7 @@ import {
   writeStepLog,
   ALLOWED_JOURNEY_TYPES,
 } from "../_shared/candidates.ts";
+import { sendTransactionalEmail, logEmailSkipped } from "../_shared/brevo.ts";
 
 const ENDPOINT = "concierge-arrival";
 
@@ -96,8 +97,31 @@ Deno.serve(async (req) => {
         candidate_created: candidate.created,
         step_log_id: step.id,
         deduped: step.deduped,
+        communication_status: candidate.communicationStatus,
       },
     });
+
+    if (candidate.communicationStatus === "auto_b2c_active") {
+      await sendTransactionalEmail(supabase, {
+        templateKey: "b2c_email_2",
+        recipientEmail: email,
+        candidateId: candidate.candidateId,
+        sourceEndpoint: ENDPOINT,
+        emailNumber: 2,
+        mergeParams: {
+          first_name: candidate.firstName || "there",
+        },
+      });
+    } else {
+      await logEmailSkipped(supabase, {
+        templateKey: "b2c_email_2",
+        candidateId: candidate.candidateId,
+        sourceEndpoint: ENDPOINT,
+        emailNumber: 2,
+        status: candidate.communicationStatus,
+        reason: `communication_status='${candidate.communicationStatus}' — auto-fire suppressed`,
+      });
+    }
 
     return new Response(
       JSON.stringify({

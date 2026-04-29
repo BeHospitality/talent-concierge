@@ -114,6 +114,45 @@ export type Database = {
         }
         Relationships: []
       }
+      brevo_templates: {
+        Row: {
+          brevo_template_id: number
+          created_at: string
+          id: string
+          reply_to_email: string
+          sender_email: string
+          sender_name: string
+          subject: string
+          template_key: string
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          brevo_template_id: number
+          created_at?: string
+          id?: string
+          reply_to_email: string
+          sender_email: string
+          sender_name: string
+          subject: string
+          template_key: string
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          brevo_template_id?: number
+          created_at?: string
+          id?: string
+          reply_to_email?: string
+          sender_email?: string
+          sender_name?: string
+          subject?: string
+          template_key?: string
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       buddy_assignments: {
         Row: {
           assigned_at: string

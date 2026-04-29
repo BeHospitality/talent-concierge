@@ -10,7 +10,9 @@ import {
   resolveCandidate,
   writeStepLog,
   ALLOWED_JOURNEY_TYPES,
+  BE_CONNECT_PORTAL_ORG_ID,
 } from "../_shared/candidates.ts";
+import { sendTransactionalEmail, logEmailSkipped } from "../_shared/brevo.ts";
 
 const ENDPOINT = "dna-reveal-email-captured";
 
@@ -67,11 +69,19 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // A4: auto-classify NEW B2C candidates as 'auto_b2c_active'.
+    // B2B path is signalled by magic_link_token or a non-portal org_code.
+    const isB2BPath =
+      Boolean(body.magic_link_token) ||
+      (body.org_code && body.org_code !== "BECONNECT_PORTAL");
+    const initialStatus = isB2BPath ? "manual_review" : "auto_b2c_active";
+
     const candidate = await resolveCandidate(supabase, email, {
       firstName: body.first_name ?? null,
       lastName: body.last_name ?? null,
       inboundJourneyType: body.journey_type ?? null,
       referralSource: "dna-app",
+      initialCommunicationStatus: initialStatus,
     });
 
     const step = await writeStepLog(supabase, {
@@ -102,8 +112,33 @@ Deno.serve(async (req) => {
         candidate_created: candidate.created,
         step_log_id: step.id,
         deduped: step.deduped,
+        communication_status: candidate.communicationStatus,
       },
     });
+
+    // --- Email firing (best-effort) ---
+    if (candidate.communicationStatus === "auto_b2c_active") {
+      await sendTransactionalEmail(supabase, {
+        templateKey: "b2c_email_1",
+        recipientEmail: email,
+        candidateId: candidate.candidateId,
+        sourceEndpoint: ENDPOINT,
+        emailNumber: 1,
+        mergeParams: {
+          first_name: candidate.firstName || "there",
+          archetype: body.archetype || "Hospitality DNA Profile",
+        },
+      });
+    } else {
+      await logEmailSkipped(supabase, {
+        templateKey: "b2c_email_1",
+        candidateId: candidate.candidateId,
+        sourceEndpoint: ENDPOINT,
+        emailNumber: 1,
+        status: candidate.communicationStatus,
+        reason: `communication_status='${candidate.communicationStatus}' — auto-fire suppressed`,
+      });
+    }
 
     return new Response(
       JSON.stringify({
