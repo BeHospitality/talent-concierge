@@ -7,7 +7,7 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { makeServiceClient, writeStepLog } from "../_shared/candidates.ts";
 import { sendTransactionalEmail, logEmailSkipped } from "../_shared/brevo.ts";
-import { timingSafeEqual } from "../_shared/secrets.ts";
+import { authenticateAdminOrService } from "../_shared/admin-auth.ts";
 
 const ENDPOINT = "fire-email-4";
 
@@ -32,18 +32,17 @@ Deno.serve(async (req) => {
 
   const supabase = makeServiceClient();
 
-  // --- Auth: require Bearer <SERVICE_ROLE_KEY> ---
-  const authHeader = req.headers.get("authorization") || "";
-  const expected = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const provided = authHeader.startsWith("Bearer ")
-    ? authHeader.slice(7).trim()
-    : "";
-  if (!expected || !provided || !timingSafeEqual(provided, expected)) {
+  // --- Auth: service-role bearer OR admin user JWT ---
+  const auth = await authenticateAdminOrService(req, supabase);
+  if (!auth.ok) {
     await supabase.from("audit_log").insert({
       event_type: "webhook_auth_failed",
-      payload: { endpoint: ENDPOINT },
+      payload: { endpoint: ENDPOINT, status: auth.status },
     });
-    return unauthorized();
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   let body: any;
@@ -54,7 +53,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    return await handle(supabase, body);
+    return await handle(supabase, body, auth.operatorUserId);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[${ENDPOINT}] uncaught:`, msg);
@@ -69,7 +68,7 @@ Deno.serve(async (req) => {
   }
 });
 
-async function handle(supabase: any, body: any): Promise<Response> {
+async function handle(supabase: any, body: any, operatorUserId: string | null): Promise<Response> {
   const candidateId = body.candidate_id;
   const force = body.force === true;
   if (!candidateId || typeof candidateId !== "string") {
@@ -187,6 +186,19 @@ async function handle(supabase: any, body: any): Promise<Response> {
       .update({ communication_status: "complete" })
       .eq("id", candidate.id);
   }
+
+  // Audit (manual fire) so the Career Agent Controls panel reflects this.
+  await supabase.from("audit_log").insert({
+    event_type: "email_sent_manual",
+    payload: {
+      endpoint: ENDPOINT, email_number: 4,
+      candidate_id: candidate.id, candidate_email: candidate.email,
+      operator_user_id: operatorUserId,
+      brevo_message_id: sendResult.messageId ?? null,
+      ok: sendResult.ok, forced: force,
+      error: sendResult.ok ? null : sendResult.error,
+    },
+  });
 
   return new Response(
     JSON.stringify({

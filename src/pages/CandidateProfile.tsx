@@ -27,6 +27,8 @@ import { MOOD_EMOJIS, MOOD_LABELS, CONFIDENCE_EMOJIS, CONFIDENCE_LABELS, TEAM_EM
 import { TeamCompatibilityPreview } from "@/components/candidate/TeamCompatibilityPreview";
 import { ProfessionalView } from "@/components/candidate/ProfessionalView";
 import { ResumeUploadSection } from "@/components/candidate/ResumeUploadSection";
+import { CareerAgentControls } from "@/components/career-agent/CareerAgentControls";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -85,6 +87,7 @@ export default function CandidateProfile() {
   const { id } = useParams();
   const { isDemoMode } = useDemoMode();
   const { candidates: dbCandidates, deleteCandidate, updateCandidate } = useCandidates();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("personal");
 
@@ -234,6 +237,24 @@ export default function CandidateProfile() {
               </div>
             </div>
           </div>
+
+          {/* Career Agent Controls (admin-only, live mode only) */}
+          {!isDemoMode && isAdmin && (() => {
+            const dbRow = dbCandidates.find((c) => c.id === candidate.id) as any;
+            return (
+              <div className="mb-6">
+                <CareerAgentControls
+                  candidate={{
+                    id: candidate.id,
+                    full_name: candidate.full_name,
+                    email: candidate.email,
+                    archetype: (candidate as any).archetype ?? null,
+                    current_journey_type: dbRow?.current_journey_type ?? "h2b_phase1_screening",
+                  }}
+                />
+              </div>
+            );
+          })()}
 
           {/* Journey Progress Card (shown on all sections except journey itself) */}
           {!isDemoMode && activeSection !== "journey" && (

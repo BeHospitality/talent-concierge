@@ -8,3 +8,15 @@ verify_jwt = false
 
 [functions.send-dossier-email]
 verify_jwt = false
+
+[functions.fire-email-1]
+verify_jwt = false
+
+[functions.fire-email-2]
+verify_jwt = false
+
+[functions.fire-email-3]
+verify_jwt = false
+
+[functions.fire-email-4]
+verify_jwt = false
