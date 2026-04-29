@@ -47,11 +47,12 @@ export async function resolveCandidate(
     lastName?: string | null;
     inboundJourneyType?: string | null;
     referralSource?: string | null;
+    initialCommunicationStatus?: string | null;
   } = {},
 ): Promise<ResolveCandidateResult> {
   const { data: existing } = await supabase
     .from("candidates")
-    .select("id, organization_id, current_journey_type")
+    .select("id, organization_id, current_journey_type, communication_status, full_name")
     .eq("email", email)
     .maybeSingle();
 
@@ -73,6 +74,9 @@ export async function resolveCandidate(
       organizationId: existing.organization_id,
       journeyType,
       created: false,
+      communicationStatus: existing.communication_status || "manual_review",
+      firstName: opts.firstName || deriveFirstName(existing.full_name, email),
+      email,
     };
   }
 
@@ -85,6 +89,8 @@ export async function resolveCandidate(
     [opts.firstName, opts.lastName].filter(Boolean).join(" ").trim() ||
     email.split("@")[0];
 
+  const initialStatus = opts.initialCommunicationStatus || "manual_review";
+
   const { data: inserted, error } = await supabase
     .from("candidates")
     .insert({
@@ -93,11 +99,11 @@ export async function resolveCandidate(
       organization_id: BE_CONNECT_PORTAL_ORG_ID,
       current_stage: "pre_screening",
       current_journey_type: journeyType,
-      communication_status: "manual_review",
+      communication_status: initialStatus,
       prescreening_complete: false,
       referral_source: opts.referralSource || "portal",
     })
-    .select("id, organization_id, current_journey_type")
+    .select("id, organization_id, current_journey_type, communication_status, full_name")
     .single();
 
   if (error || !inserted) {
@@ -107,6 +113,9 @@ export async function resolveCandidate(
       organizationId: BE_CONNECT_PORTAL_ORG_ID,
       journeyType,
       created: false,
+      communicationStatus: initialStatus,
+      firstName: opts.firstName || deriveFirstName(fullName, email),
+      email,
     };
   }
 
@@ -115,7 +124,17 @@ export async function resolveCandidate(
     organizationId: inserted.organization_id,
     journeyType: inserted.current_journey_type,
     created: true,
+    communicationStatus: inserted.communication_status || initialStatus,
+    firstName: opts.firstName || deriveFirstName(inserted.full_name, email),
+    email,
   };
+}
+
+function deriveFirstName(fullName: string | null | undefined, email: string): string {
+  if (fullName && fullName.trim().length > 0) {
+    return fullName.trim().split(/\s+/)[0];
+  }
+  return email.split("@")[0];
 }
 
 export interface StepLogWrite {
