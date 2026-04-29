@@ -11,6 +11,7 @@ import {
   writeStepLog,
   ALLOWED_JOURNEY_TYPES,
 } from "../_shared/candidates.ts";
+import { sendTransactionalEmail, logEmailSkipped, formatStepList } from "../_shared/brevo.ts";
 
 const ENDPOINT = "profile-taking-shape";
 
