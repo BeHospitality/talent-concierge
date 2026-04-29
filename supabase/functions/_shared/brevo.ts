@@ -59,12 +59,21 @@ export async function sendTransactionalEmail(
     return { ok: false, error: "template not registered" };
   }
 
+  // Build a flat params object: drop undefined/null entries so Brevo's
+  // template engine never sees missing keys, and coerce non-string scalars
+  // to strings to guarantee merge-tag substitution renders cleanly.
+  const flatParams: Record<string, string> = {};
+  for (const [k, v] of Object.entries(args.mergeParams ?? {})) {
+    if (v === undefined || v === null) continue;
+    flatParams[k] = typeof v === "string" ? v : String(v);
+  }
+
   const payload = {
     templateId: tpl.brevo_template_id,
     to: [{ email: args.recipientEmail }],
     sender: { name: tpl.sender_name, email: tpl.sender_email },
     replyTo: { email: tpl.reply_to_email },
-    params: args.mergeParams,
+    params: flatParams,
   };
 
   try {
