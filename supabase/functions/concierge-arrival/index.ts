@@ -15,6 +15,15 @@ import { sendTransactionalEmail, logEmailSkipped } from "../_shared/brevo.ts";
 
 const ENDPOINT = "concierge-arrival";
 
+// Email #2 attention-management gate (Board directive, 29 Apr 2026):
+// Suppress Email #2 if Email #1 fired less than EMAIL_2_RECENT_DNA_THRESHOLD_MINUTES
+// minutes ago. Rationale: a candidate who captures DNA reveal email
+// and immediately clicks through to /concierge is already in the app —
+// a second welcome email in their inbox 60 seconds later is noise,
+// not value. Email #2 becomes a re-engagement trigger for candidates
+// who arrive at /concierge AFTER wandering off.
+const EMAIL_2_RECENT_DNA_THRESHOLD_MINUTES = 20;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
