@@ -74,7 +74,7 @@ export function EmailPreviewDialog({ emailNumber, candidate, open, onOpenChange,
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke(`fire-email-${emailNumber}`, {
-        body: { candidate_id: candidate.id, operator_user_id: user?.id ?? null },
+        body: { candidate_id: candidate.id, ...(emailNumber === 4 ? { force: true } : {}) },
       });
       if (error) throw new Error(error.message || "Edge function error");
       if (data && data.success === false) {
