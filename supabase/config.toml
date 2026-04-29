@@ -3,6 +3,9 @@ project_id = "buriwmeuvujisgmqnpjr"
 [functions.dna-webhook]
 verify_jwt = false
 
+[functions.preferences-webhook]
+verify_jwt = false
+
 [functions.onboard-client]
 verify_jwt = false
 
