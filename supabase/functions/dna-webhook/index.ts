@@ -1,9 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validateSecret } from "../_shared/secrets.ts";
 
+// CORS headers — extended to accept x-dna-secret per Build #1C Stage 2
+// security retrofit (closes the unauthenticated-endpoint GDPR gap).
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-dna-secret",
 };
 
 const BE_CONNECT_PORTAL_ORG_ID = "2deabbf5-6223-4c77-831c-b87b90d17ee6";
@@ -17,6 +20,21 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
+
+  // --- Security retrofit: x-dna-secret validation (Build #1C Stage 2) ---
+  // Must run before any DB write. Shares DNA_INBOUND_SECRET with
+  // dna-reveal-email-captured (single secret per source).
+  const auth = validateSecret(req, "x-dna-secret", "DNA_INBOUND_SECRET");
+  if (!auth.ok) {
+    await supabase.from("audit_log").insert({
+      event_type: "dna_webhook_auth_failed",
+      payload: { endpoint: "dna-webhook", status: auth.status },
+    });
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const body = await req.json();
