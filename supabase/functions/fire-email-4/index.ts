@@ -151,7 +151,7 @@ async function handle(supabase: any, body: any): Promise<Response> {
     journeyType,
     stepNumber: 4,
     stepName: "profile_complete",
-    source: "fire-email-4",
+    source: "hub-manual",
     payload: { force, fired_at: new Date().toISOString() },
   });
 
