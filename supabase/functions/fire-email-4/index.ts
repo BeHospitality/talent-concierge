@@ -7,7 +7,7 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { makeServiceClient, writeStepLog } from "../_shared/candidates.ts";
 import { sendTransactionalEmail, logEmailSkipped } from "../_shared/brevo.ts";
-import { timingSafeEqual } from "../_shared/secrets.ts";
+import { authenticateAdminOrService } from "../_shared/admin-auth.ts";
 
 const ENDPOINT = "fire-email-4";
 
@@ -32,18 +32,17 @@ Deno.serve(async (req) => {
 
   const supabase = makeServiceClient();
 
-  // --- Auth: require Bearer <SERVICE_ROLE_KEY> ---
-  const authHeader = req.headers.get("authorization") || "";
-  const expected = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const provided = authHeader.startsWith("Bearer ")
-    ? authHeader.slice(7).trim()
-    : "";
-  if (!expected || !provided || !timingSafeEqual(provided, expected)) {
+  // --- Auth: service-role bearer OR admin user JWT ---
+  const auth = await authenticateAdminOrService(req, supabase);
+  if (!auth.ok) {
     await supabase.from("audit_log").insert({
       event_type: "webhook_auth_failed",
-      payload: { endpoint: ENDPOINT },
+      payload: { endpoint: ENDPOINT, status: auth.status },
     });
-    return unauthorized();
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   let body: any;
