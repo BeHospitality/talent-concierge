@@ -5,7 +5,7 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { makeServiceClient, writeStepLog } from "../_shared/candidates.ts";
 import { sendTransactionalEmail, formatStepList } from "../_shared/brevo.ts";
-import { timingSafeEqual } from "../_shared/secrets.ts";
+import { authenticateAdminOrService } from "../_shared/admin-auth.ts";
 
 const ENDPOINT = "fire-email-3";
 
@@ -24,20 +24,20 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const supabase = makeServiceClient();
-  const authHeader = req.headers.get("authorization") || "";
-  const expected = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const provided = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
-  if (!expected || !provided || !timingSafeEqual(provided, expected)) {
+  const auth = await authenticateAdminOrService(req, supabase);
+  if (!auth.ok) {
     await supabase.from("audit_log").insert({
-      event_type: "webhook_auth_failed", payload: { endpoint: ENDPOINT },
+      event_type: "webhook_auth_failed", payload: { endpoint: ENDPOINT, status: auth.status },
     });
-    return unauthorized();
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   let body: any;
   try { body = await req.json(); } catch { return badRequest({ error: "Invalid JSON body" }); }
   const candidateId = body.candidate_id;
-  const operatorUserId = body.operator_user_id ?? null;
+  const operatorUserId = auth.operatorUserId ?? body.operator_user_id ?? null;
   if (!candidateId || typeof candidateId !== "string") return badRequest({ error: "candidate_id required" });
 
   try {
