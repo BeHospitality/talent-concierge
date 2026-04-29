@@ -20,6 +20,3 @@ verify_jwt = false
 
 [functions.fire-email-4]
 verify_jwt = false
-
-[functions.stage6-runner]
-verify_jwt = false
