@@ -1698,6 +1698,7 @@ export type Database = {
       prescreening_data: {
         Row: {
           archetype_type: string | null
+          assessment_id: string | null
           candidate_email: string | null
           candidate_id: string | null
           candidate_tier: string | null
@@ -1715,6 +1716,7 @@ export type Database = {
           first_name: string | null
           geography_matches: string[] | null
           id: string
+          last_name: string | null
           matching_results: Json | null
           organization_id: string | null
           portal_source: string | null
@@ -1724,11 +1726,13 @@ export type Database = {
           tribe_viral_archetype: Database["public"]["Enums"]["archetype"] | null
           tribe_viral_scores: Json | null
           tribe_viral_url: string | null
+          video_storage_path: string | null
           video_uploaded_at: string | null
           video_url: string | null
         }
         Insert: {
           archetype_type?: string | null
+          assessment_id?: string | null
           candidate_email?: string | null
           candidate_id?: string | null
           candidate_tier?: string | null
@@ -1746,6 +1750,7 @@ export type Database = {
           first_name?: string | null
           geography_matches?: string[] | null
           id?: string
+          last_name?: string | null
           matching_results?: Json | null
           organization_id?: string | null
           portal_source?: string | null
@@ -1757,11 +1762,13 @@ export type Database = {
             | null
           tribe_viral_scores?: Json | null
           tribe_viral_url?: string | null
+          video_storage_path?: string | null
           video_uploaded_at?: string | null
           video_url?: string | null
         }
         Update: {
           archetype_type?: string | null
+          assessment_id?: string | null
           candidate_email?: string | null
           candidate_id?: string | null
           candidate_tier?: string | null
@@ -1779,6 +1786,7 @@ export type Database = {
           first_name?: string | null
           geography_matches?: string[] | null
           id?: string
+          last_name?: string | null
           matching_results?: Json | null
           organization_id?: string | null
           portal_source?: string | null
@@ -1790,6 +1798,7 @@ export type Database = {
             | null
           tribe_viral_scores?: Json | null
           tribe_viral_url?: string | null
+          video_storage_path?: string | null
           video_uploaded_at?: string | null
           video_url?: string | null
         }

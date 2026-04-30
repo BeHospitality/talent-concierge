@@ -92,6 +92,9 @@ Deno.serve(async (req) => {
     const record = {
       candidate_email: email,
       first_name: body.first_name || null,
+      last_name: body.last_name || null,
+      assessment_id: body.assessment_id || null,
+      video_storage_path: body.video_storage_path || null,
       archetype_type: body.archetype_type || null,
       tribe_viral_archetype: body.archetype
         ? body.archetype.toLowerCase()
@@ -145,7 +148,12 @@ Deno.serve(async (req) => {
         if (org) orgId = org.id;
       }
 
-      const candidateName = body.first_name || email.split("@")[0];
+      const candidateName =
+        [body.first_name, body.last_name]
+          .filter((p) => p && String(p).trim().length > 0)
+          .join(" ")
+          .trim() ||
+        email.split("@")[0];
 
       const { data: newCandidate, error: candError } = await supabase
         .from("candidates")
@@ -184,12 +192,15 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (candidateRecord) {
-        const newClip = {
+        const newClip: Record<string, unknown> = {
           id: crypto.randomUUID(),
           title: "Introduction",
           url: body.video_url,
           uploaded_at: body.video_uploaded_at || new Date().toISOString(),
         };
+        if (body.video_storage_path) {
+          newClip.storage_path = body.video_storage_path;
+        }
 
         const existingClips: any[] = candidateRecord.video_clips || [];
         const alreadyExists = existingClips.some(
