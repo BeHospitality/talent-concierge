@@ -92,6 +92,9 @@ Deno.serve(async (req) => {
     const record = {
       candidate_email: email,
       first_name: body.first_name || null,
+      last_name: body.last_name || null,
+      assessment_id: body.assessment_id || null,
+      video_storage_path: body.video_storage_path || null,
       archetype_type: body.archetype_type || null,
       tribe_viral_archetype: body.archetype
         ? body.archetype.toLowerCase()
