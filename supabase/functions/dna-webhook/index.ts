@@ -192,12 +192,15 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (candidateRecord) {
-        const newClip = {
+        const newClip: Record<string, unknown> = {
           id: crypto.randomUUID(),
           title: "Introduction",
           url: body.video_url,
           uploaded_at: body.video_uploaded_at || new Date().toISOString(),
         };
+        if (body.video_storage_path) {
+          newClip.storage_path = body.video_storage_path;
+        }
 
         const existingClips: any[] = candidateRecord.video_clips || [];
         const alreadyExists = existingClips.some(
