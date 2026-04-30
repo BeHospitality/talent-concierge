@@ -148,7 +148,12 @@ Deno.serve(async (req) => {
         if (org) orgId = org.id;
       }
 
-      const candidateName = body.first_name || email.split("@")[0];
+      const candidateName =
+        [body.first_name, body.last_name]
+          .filter((p) => p && String(p).trim().length > 0)
+          .join(" ")
+          .trim() ||
+        email.split("@")[0];
 
       const { data: newCandidate, error: candError } = await supabase
         .from("candidates")
