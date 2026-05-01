@@ -42,6 +42,13 @@ All sent from `john@be.ie` via Brevo SMTP (`smtp-relay.mailin.fr`).
 
 ## Email #1 — Archetype Reveal (`b2c_email_1`)
 
+**Live Brevo subject (template ID 1):**
+`{{ params.first_name }}, your DNA is in — you're a {{ params.archetype }}`
+
+The subject is **hard-coded** to the pattern `you're a {{ archetype }}`. This
+constrains `archetype` to a singular noun phrase that reads naturally after
+the indefinite article "a".
+
 **Operator-facing preview (from `EmailPreviewDialog.tsx`, NOT Brevo):**
 - Subject stub: `{first_name}, your DNA is in`
 - Body stub (first 200 chars):
@@ -50,12 +57,21 @@ All sent from `john@be.ie` via Brevo SMTP (`smtp-relay.mailin.fr`).
   > Your Hospitality DNA result is ready: {archetype}. Here's what that means
   > for your next move…
 
+  Note: the preview stub drifts from the live Brevo subject. Worth syncing
+  before launch so the operator sees what actually goes out.
+
 **Merge params the Hub passes to Brevo:**
 - `first_name` — derived from `candidates.full_name` (first whitespace-split
   token) or local-part of email if name missing
-- `archetype` — from `prescreening_data.archetype_type` →
-  `prescreening_data.tribe_viral_archetype` → fallback string
-  `"Hospitality DNA Profile"`
+- `archetype` — Title-Cased from `prescreening_data.archetype_type` →
+  `prescreening_data.tribe_viral_archetype` → fallback `"natural fit"`.
+  Casing fix applied 2026-05-01: enum values stored lowercase
+  (`lion`/`whale`/`falcon`) are normalised to Title Case
+  (`Lion`/`Whale`/`Falcon`) before send so the rendered subject reads
+  "you're a Lion" not "you're a lion". When archetype is missing,
+  `"natural fit"` substitutes cleanly into the "you're a …" frame.
+  - Applied in BOTH `fire-email-1` (manual) and
+    `dna-reveal-email-captured` (auto) edge functions.
 
 **Auto-fire trigger (production path):**
 - Inbound webhook `dna-reveal-email-captured` from the DNA app, fired when
