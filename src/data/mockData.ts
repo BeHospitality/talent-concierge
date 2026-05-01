@@ -37,6 +37,7 @@ export interface Candidate {
   };
   career_goal?: string;
   role_title?: string;
+  dna_recovery_status?: string | null;
 }
 
 export interface Organization {
