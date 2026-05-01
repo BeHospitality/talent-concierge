@@ -88,8 +88,57 @@ Deno.serve(async (req) => {
     const departmentMatches = Array.isArray(mr.departmentMatches) ? mr.departmentMatches : null;
     const geographyMatches = Array.isArray(mr.geographyMatches) ? mr.geographyMatches : null;
 
-    // dimension_scores: prefer explicit body.scores, else comprehensiveScores
-    const dimensionScores = body.scores || comprehensive || null;
+    // Stage 7E Mod 2 — validate inbound shape, normalise to Title Case,
+    // audit-log mismatches and normalisations.
+    const rawDimensionScores = body.scores || comprehensive || null;
+    const normalisedDimensionScores = normaliseDimensionKeys(rawDimensionScores);
+
+    let primaryScoresValid = false;
+    let comprehensiveScoresFallback: Record<string, number> | null = null;
+
+    if (normalisedDimensionScores && typeof normalisedDimensionScores === "object") {
+      const incomingKeys = Object.keys(normalisedDimensionScores);
+      const matchingKeys = EXPECTED_PRIMARY_DIMENSIONS.filter((k) =>
+        incomingKeys.includes(k)
+      );
+      primaryScoresValid = matchingKeys.length === 5;
+
+      if (!primaryScoresValid) {
+        comprehensiveScoresFallback = normalisedDimensionScores;
+        await supabase.from("audit_log").insert({
+          event_type: "dna_webhook_shape_mismatch",
+          payload: {
+            candidate_email: body.email || null,
+            assessment_id: body.assessment_id || null,
+            incoming_key_count: incomingKeys.length,
+            incoming_keys_sample: incomingKeys.slice(0, 10),
+            expected_keys: EXPECTED_PRIMARY_DIMENSIONS,
+            matching_keys: matchingKeys,
+          },
+        });
+      } else if (
+        rawDimensionScores &&
+        JSON.stringify(Object.keys(rawDimensionScores).sort()) !==
+          JSON.stringify(Object.keys(normalisedDimensionScores).sort())
+      ) {
+        await supabase.from("audit_log").insert({
+          event_type: "dna_webhook_keys_normalised",
+          payload: {
+            candidate_email: body.email || null,
+            assessment_id: body.assessment_id || null,
+            incoming_keys: Object.keys(rawDimensionScores),
+            normalised_to: "title_case",
+          },
+        });
+      }
+    }
+
+    const dimensionScoresToPersist = primaryScoresValid
+      ? normalisedDimensionScores
+      : null;
+    const comprehensiveScoresToPersist = primaryScoresValid
+      ? null
+      : comprehensiveScoresFallback;
 
     // tribe_viral_scores: prefer explicit body.tribe_scores / body.scores,
     // else fall back to a single-archetype map derived from the named archetype
