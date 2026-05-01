@@ -1,0 +1,1 @@
+ALTER TABLE public.prescreening_data ADD COLUMN IF NOT EXISTS comprehensive_scores jsonb;

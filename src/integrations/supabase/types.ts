@@ -1706,6 +1706,7 @@ export type Database = {
           career_compass_motivators: Json | null
           career_compass_url: string | null
           completed_at: string | null
+          comprehensive_scores: Json | null
           department_matches: string[] | null
           dimension_scores: Json | null
           dna_path: string | null
@@ -1740,6 +1741,7 @@ export type Database = {
           career_compass_motivators?: Json | null
           career_compass_url?: string | null
           completed_at?: string | null
+          comprehensive_scores?: Json | null
           department_matches?: string[] | null
           dimension_scores?: Json | null
           dna_path?: string | null
@@ -1776,6 +1778,7 @@ export type Database = {
           career_compass_motivators?: Json | null
           career_compass_url?: string | null
           completed_at?: string | null
+          comprehensive_scores?: Json | null
           department_matches?: string[] | null
           dimension_scores?: Json | null
           dna_path?: string | null
