@@ -118,6 +118,13 @@ Deno.serve(async (req) => {
 
     // --- Email firing (best-effort) ---
     if (candidate.communicationStatus === "auto_b2c_active") {
+      // Brevo subject template hard-codes "you're a {{params.archetype}}".
+      // Normalise enum casing ("lion" -> "Lion"); fall back to a neutral
+      // noun phrase that still parses with the "you're a" prefix.
+      const rawArchetype: string | null = body.archetype ?? null;
+      const archetype = rawArchetype
+        ? rawArchetype.charAt(0).toUpperCase() + rawArchetype.slice(1).toLowerCase()
+        : "natural fit";
       await sendTransactionalEmail(supabase, {
         templateKey: "b2c_email_1",
         recipientEmail: email,
@@ -126,7 +133,7 @@ Deno.serve(async (req) => {
         emailNumber: 1,
         mergeParams: {
           first_name: candidate.firstName || "there",
-          archetype: body.archetype || "Hospitality DNA Profile",
+          archetype,
         },
       });
     } else {
