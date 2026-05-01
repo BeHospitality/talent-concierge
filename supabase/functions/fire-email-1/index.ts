@@ -68,10 +68,17 @@ Deno.serve(async (req) => {
     const firstName =
       (candidate.full_name && candidate.full_name.trim().split(/\s+/)[0]) ||
       candidate.email.split("@")[0];
-    const archetype =
+    // Brevo subject template hard-codes "you're a {{params.archetype}}".
+    // Normalise enum casing to Title Case ("lion" -> "Lion") so the
+    // sentence reads cleanly. When archetype is missing, substitute a
+    // neutral noun phrase that still parses with the "you're a" prefix.
+    const rawArchetype: string | null =
       (presc as any)?.archetype_type ||
       (presc as any)?.tribe_viral_archetype ||
-      "Hospitality DNA Profile";
+      null;
+    const archetype = rawArchetype
+      ? rawArchetype.charAt(0).toUpperCase() + rawArchetype.slice(1).toLowerCase()
+      : "natural fit";
 
     const journeyType = candidate.current_journey_type || "h2b_phase1_screening";
 
