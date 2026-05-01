@@ -115,13 +115,26 @@ export default function CandidateProfile() {
   // the radar renders an honest empty state instead of misleading numbers.
   const isUnrecoverable =
     prescreeningData?.dna_recovery_status === "unrecoverable_pre_mod2";
+  // Normalise dimension keys to lowercase so the radar (which reads scores.autonomy etc.)
+  // works regardless of whether the stored blob uses Title Case or lowercase keys.
+  const normaliseDimensionKeys = (raw: any): any => {
+    if (!raw || typeof raw !== "object") return raw;
+    const out: Record<string, any> = {};
+    for (const [k, v] of Object.entries(raw)) {
+      out[k.toLowerCase()] = v;
+    }
+    return out;
+  };
+  const rawScores =
+    (prescreeningData?.dimension_scores as any) ??
+    (prescreeningData?.tribe_viral_scores as any);
   const candidate = baseCandidate && !isDemoMode && prescreeningData
     ? {
         ...baseCandidate,
         archetype: prescreeningData.tribe_viral_archetype as any,
         tribe_viral_scores: isUnrecoverable
           ? undefined
-          : ((prescreeningData.dimension_scores as any) ?? (prescreeningData.tribe_viral_scores as any)),
+          : normaliseDimensionKeys(rawScores),
         dna_recovery_status: prescreeningData.dna_recovery_status as any,
       }
     : baseCandidate;
