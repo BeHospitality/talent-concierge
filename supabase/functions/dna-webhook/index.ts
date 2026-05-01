@@ -171,7 +171,8 @@ Deno.serve(async (req) => {
         ? body.archetype.toLowerCase()
         : null,
       tribe_viral_scores: tribeScores,
-      dimension_scores: dimensionScores,
+      dimension_scores: dimensionScoresToPersist,
+      comprehensive_scores: comprehensiveScoresToPersist,
       matching_results: body.matching_results || null,
       sector_matches: sectorMatchStrings,
       department_matches: departmentMatchStrings,
