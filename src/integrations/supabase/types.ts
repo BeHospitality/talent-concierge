@@ -1710,6 +1710,7 @@ export type Database = {
           department_matches: string[] | null
           dimension_scores: Json | null
           dna_path: string | null
+          dna_recovery_status: string | null
           dna_session_id: string | null
           dna_source: string | null
           ethics_signed: boolean | null
@@ -1745,6 +1746,7 @@ export type Database = {
           department_matches?: string[] | null
           dimension_scores?: Json | null
           dna_path?: string | null
+          dna_recovery_status?: string | null
           dna_session_id?: string | null
           dna_source?: string | null
           ethics_signed?: boolean | null
@@ -1782,6 +1784,7 @@ export type Database = {
           department_matches?: string[] | null
           dimension_scores?: Json | null
           dna_path?: string | null
+          dna_recovery_status?: string | null
           dna_session_id?: string | null
           dna_source?: string | null
           ethics_signed?: boolean | null
