@@ -11,6 +11,28 @@ const corsHeaders = {
 
 const BE_CONNECT_PORTAL_ORG_ID = "2deabbf5-6223-4c77-831c-b87b90d17ee6";
 
+// Stage 7E Mod 2 — boundary normalisation for DNA dimension keys.
+// DNA app currently emits lowercase (autonomy, collaboration, ...);
+// Hub canonical form is Title Case. Trust no inputs; normalise once; store canonically.
+const EXPECTED_PRIMARY_DIMENSIONS = [
+  "Adaptability",
+  "Collaboration",
+  "Autonomy",
+  "Leadership",
+  "Precision",
+];
+
+function normaliseDimensionKeys(
+  scores: Record<string, number> | null,
+): Record<string, number> | null {
+  if (!scores || typeof scores !== "object") return null;
+  const titleCase = (s: string) =>
+    s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  return Object.fromEntries(
+    Object.entries(scores).map(([k, v]) => [titleCase(k), v]),
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -66,8 +88,57 @@ Deno.serve(async (req) => {
     const departmentMatches = Array.isArray(mr.departmentMatches) ? mr.departmentMatches : null;
     const geographyMatches = Array.isArray(mr.geographyMatches) ? mr.geographyMatches : null;
 
-    // dimension_scores: prefer explicit body.scores, else comprehensiveScores
-    const dimensionScores = body.scores || comprehensive || null;
+    // Stage 7E Mod 2 — validate inbound shape, normalise to Title Case,
+    // audit-log mismatches and normalisations.
+    const rawDimensionScores = body.scores || comprehensive || null;
+    const normalisedDimensionScores = normaliseDimensionKeys(rawDimensionScores);
+
+    let primaryScoresValid = false;
+    let comprehensiveScoresFallback: Record<string, number> | null = null;
+
+    if (normalisedDimensionScores && typeof normalisedDimensionScores === "object") {
+      const incomingKeys = Object.keys(normalisedDimensionScores);
+      const matchingKeys = EXPECTED_PRIMARY_DIMENSIONS.filter((k) =>
+        incomingKeys.includes(k)
+      );
+      primaryScoresValid = matchingKeys.length === 5;
+
+      if (!primaryScoresValid) {
+        comprehensiveScoresFallback = normalisedDimensionScores;
+        await supabase.from("audit_log").insert({
+          event_type: "dna_webhook_shape_mismatch",
+          payload: {
+            candidate_email: body.email || null,
+            assessment_id: body.assessment_id || null,
+            incoming_key_count: incomingKeys.length,
+            incoming_keys_sample: incomingKeys.slice(0, 10),
+            expected_keys: EXPECTED_PRIMARY_DIMENSIONS,
+            matching_keys: matchingKeys,
+          },
+        });
+      } else if (
+        rawDimensionScores &&
+        JSON.stringify(Object.keys(rawDimensionScores).sort()) !==
+          JSON.stringify(Object.keys(normalisedDimensionScores).sort())
+      ) {
+        await supabase.from("audit_log").insert({
+          event_type: "dna_webhook_keys_normalised",
+          payload: {
+            candidate_email: body.email || null,
+            assessment_id: body.assessment_id || null,
+            incoming_keys: Object.keys(rawDimensionScores),
+            normalised_to: "title_case",
+          },
+        });
+      }
+    }
+
+    const dimensionScoresToPersist = primaryScoresValid
+      ? normalisedDimensionScores
+      : null;
+    const comprehensiveScoresToPersist = primaryScoresValid
+      ? null
+      : comprehensiveScoresFallback;
 
     // tribe_viral_scores: prefer explicit body.tribe_scores / body.scores,
     // else fall back to a single-archetype map derived from the named archetype
@@ -100,7 +171,8 @@ Deno.serve(async (req) => {
         ? body.archetype.toLowerCase()
         : null,
       tribe_viral_scores: tribeScores,
-      dimension_scores: dimensionScores,
+      dimension_scores: dimensionScoresToPersist,
+      comprehensive_scores: comprehensiveScoresToPersist,
       matching_results: body.matching_results || null,
       sector_matches: sectorMatchStrings,
       department_matches: departmentMatchStrings,
