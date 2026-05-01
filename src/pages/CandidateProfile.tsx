@@ -97,7 +97,7 @@ export default function CandidateProfile() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("prescreening_data")
-        .select("tribe_viral_archetype, tribe_viral_scores, dimension_scores")
+        .select("tribe_viral_archetype, tribe_viral_scores, dimension_scores, dna_recovery_status")
         .eq("candidate_id", id!)
         .maybeSingle();
       if (error) throw error;
@@ -110,12 +110,19 @@ export default function CandidateProfile() {
     ? mockCandidates.find((c) => c.id === id)
     : dbCandidates.map(dbToCandidate).find((c) => c.id === id);
 
-  // Merge prescreening data: prefer dimension_scores (5 dimensions) over tribe_viral_scores (archetype weights)
+  // Merge prescreening data: prefer dimension_scores (5 dimensions) over tribe_viral_scores (archetype weights).
+  // When DNA scores are flagged unrecoverable_pre_mod2, suppress the legacy archetype-weight fallback so
+  // the radar renders an honest empty state instead of misleading numbers.
+  const isUnrecoverable =
+    prescreeningData?.dna_recovery_status === "unrecoverable_pre_mod2";
   const candidate = baseCandidate && !isDemoMode && prescreeningData
     ? {
         ...baseCandidate,
         archetype: prescreeningData.tribe_viral_archetype as any,
-        tribe_viral_scores: (prescreeningData.dimension_scores as any) ?? (prescreeningData.tribe_viral_scores as any),
+        tribe_viral_scores: isUnrecoverable
+          ? undefined
+          : ((prescreeningData.dimension_scores as any) ?? (prescreeningData.tribe_viral_scores as any)),
+        dna_recovery_status: prescreeningData.dna_recovery_status as any,
       }
     : baseCandidate;
 

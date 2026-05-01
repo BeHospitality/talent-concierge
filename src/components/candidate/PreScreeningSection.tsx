@@ -105,7 +105,7 @@ export function PreScreeningSection({ candidate, isDemoMode, onUpdate }: PreScre
       </div>
 
       {/* Archetype & Radar Chart */}
-      {archetype && scores && (
+      {archetype && (
         <div className="bg-card rounded-xl border border-border/50 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Tribe-Viral Profile</h2>
@@ -144,66 +144,82 @@ export function PreScreeningSection({ candidate, isDemoMode, onUpdate }: PreScre
               </div>
             </div>
 
-            {/* Radar Chart */}
-            <div className="flex flex-col items-center">
-              <svg width={radarSize} height={radarSize} className="overflow-visible">
-                {/* Grid rings */}
-                {[20, 40, 60, 80, 100].map((level) => (
-                  <polygon key={level}
-                    points={Array.from({ length: 5 }, (_, i) => {
-                      const p = getPoint(i, level);
-                      return `${p.x},${p.y}`;
-                    }).join(" ")}
-                    fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" opacity={0.4} />
-                ))}
-                {/* Axis lines */}
-                {dimensions.map((_, i) => {
-                  const p = getPoint(i, 100);
-                  return <line key={i} x1={center} y1={center} x2={p.x} y2={p.y} stroke="hsl(var(--border))" strokeWidth="0.5" opacity={0.3} />;
-                })}
-                {/* Data polygon */}
-                <motion.polygon
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.8 }}
-                  points={radarPoints.map(p => `${p.x},${p.y}`).join(" ")}
-                  fill={archetypeColor} fillOpacity={0.2}
-                  stroke={archetypeColor} strokeWidth="2" />
-                {/* Data points */}
-                {radarPoints.map((p, i) => (
-                  <motion.circle key={i} cx={p.x} cy={p.y} r="4"
-                    fill={archetypeColor} initial={{ scale: 0 }} animate={{ scale: 1 }}
-                    transition={{ delay: 0.3 + i * 0.1 }} />
-                ))}
-                {/* Labels */}
-                {dimensions.map((d, i) => {
-                  const p = getPoint(i, 120);
-                  return (
-                    <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle"
-                      className="fill-foreground text-[10px] font-medium">
-                      {d.name} ({d.score})
-                    </text>
-                  );
-                })}
-              </svg>
+            {/* Radar Chart OR Empty State */}
+            <div className="flex flex-col items-center justify-center">
+              {scores ? (
+                <svg width={radarSize} height={radarSize} className="overflow-visible">
+                  {/* Grid rings */}
+                  {[20, 40, 60, 80, 100].map((level) => (
+                    <polygon key={level}
+                      points={Array.from({ length: 5 }, (_, i) => {
+                        const p = getPoint(i, level);
+                        return `${p.x},${p.y}`;
+                      }).join(" ")}
+                      fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" opacity={0.4} />
+                  ))}
+                  {/* Axis lines */}
+                  {dimensions.map((_, i) => {
+                    const p = getPoint(i, 100);
+                    return <line key={i} x1={center} y1={center} x2={p.x} y2={p.y} stroke="hsl(var(--border))" strokeWidth="0.5" opacity={0.3} />;
+                  })}
+                  {/* Data polygon */}
+                  <motion.polygon
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.8 }}
+                    points={radarPoints.map(p => `${p.x},${p.y}`).join(" ")}
+                    fill={archetypeColor} fillOpacity={0.2}
+                    stroke={archetypeColor} strokeWidth="2" />
+                  {/* Data points */}
+                  {radarPoints.map((p, i) => (
+                    <motion.circle key={i} cx={p.x} cy={p.y} r="4"
+                      fill={archetypeColor} initial={{ scale: 0 }} animate={{ scale: 1 }}
+                      transition={{ delay: 0.3 + i * 0.1 }} />
+                  ))}
+                  {/* Labels */}
+                  {dimensions.map((d, i) => {
+                    const p = getPoint(i, 120);
+                    return (
+                      <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle"
+                        className="fill-foreground text-[10px] font-medium">
+                        {d.name} ({d.score})
+                      </text>
+                    );
+                  })}
+                </svg>
+              ) : (
+                <div
+                  role="status"
+                  aria-label="DNA dimensions not available"
+                  className="flex flex-col items-center justify-center text-center w-full max-w-xs py-8 px-4 rounded-xl border border-dashed border-border/60 bg-muted/20"
+                >
+                  <Badge variant="secondary" className="mb-3">DNA Dimensions Unavailable</Badge>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    DNA dimensions not available for this candidate (pre-system-fix).
+                    Candidate has been invited to retake.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Dimension Bars */}
-          <div className="grid grid-cols-5 gap-3 mt-6 pt-6 border-t border-border/50">
-            {dimensions.map((dim) => (
-              <div key={dim.name} className="text-center">
-                <div className="h-2 bg-muted rounded-full overflow-hidden mb-1">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${dim.score}%` }}
-                    transition={{ duration: 0.8, delay: 0.2 }}
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: archetypeColor }} />
+          {/* Dimension Bars — only when scores exist */}
+          {scores && (
+            <div className="grid grid-cols-5 gap-3 mt-6 pt-6 border-t border-border/50">
+              {dimensions.map((dim) => (
+                <div key={dim.name} className="text-center">
+                  <div className="h-2 bg-muted rounded-full overflow-hidden mb-1">
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${dim.score}%` }}
+                      transition={{ duration: 0.8, delay: 0.2 }}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: archetypeColor }} />
+                  </div>
+                  <p className="text-[10px] font-medium">{dim.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{dim.score}%</p>
                 </div>
-                <p className="text-[10px] font-medium">{dim.name}</p>
-                <p className="text-[10px] text-muted-foreground">{dim.score}%</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

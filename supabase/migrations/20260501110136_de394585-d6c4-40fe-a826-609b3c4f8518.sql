@@ -1,0 +1,1 @@
+ALTER TABLE public.prescreening_data ADD COLUMN IF NOT EXISTS dna_recovery_status text;
