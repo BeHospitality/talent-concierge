@@ -11,6 +11,28 @@ const corsHeaders = {
 
 const BE_CONNECT_PORTAL_ORG_ID = "2deabbf5-6223-4c77-831c-b87b90d17ee6";
 
+// Stage 7E Mod 2 — boundary normalisation for DNA dimension keys.
+// DNA app currently emits lowercase (autonomy, collaboration, ...);
+// Hub canonical form is Title Case. Trust no inputs; normalise once; store canonically.
+const EXPECTED_PRIMARY_DIMENSIONS = [
+  "Adaptability",
+  "Collaboration",
+  "Autonomy",
+  "Leadership",
+  "Precision",
+];
+
+function normaliseDimensionKeys(
+  scores: Record<string, number> | null,
+): Record<string, number> | null {
+  if (!scores || typeof scores !== "object") return null;
+  const titleCase = (s: string) =>
+    s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  return Object.fromEntries(
+    Object.entries(scores).map(([k, v]) => [titleCase(k), v]),
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
