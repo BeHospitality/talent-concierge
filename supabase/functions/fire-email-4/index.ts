@@ -6,10 +6,17 @@
 
 import { corsHeaders } from "../_shared/cors.ts";
 import { makeServiceClient, writeStepLog } from "../_shared/candidates.ts";
-import { sendTransactionalEmail, logEmailSkipped } from "../_shared/brevo.ts";
+import {
+  sendTransactionalEmail,
+  logEmailSkipped,
+  getRecentSendWithinWindow,
+} from "../_shared/brevo.ts";
 import { authenticateAdminOrService } from "../_shared/admin-auth.ts";
 
 const ENDPOINT = "fire-email-4";
+const EMAIL_NUMBER = 4;
+const TEMPLATE_KEY = "b2c_email_4";
+const DUP_WINDOW_MINUTES = 10;
 
 function unauthorized(msg = "Unauthorized") {
   return new Response(JSON.stringify({ error: msg }), {
