@@ -1,18 +1,21 @@
 // fire-email-2
-// Build #1C — Stage 5. Operator-initiated manual fire of Email #2 (Welcome to Concierge).
+// Build #1C — Stage 5 + Fix 1.3 + Fix 1.5/1.6.
+// Operator-initiated manual fire of Email #2 (Welcome to Concierge).
 
 import { corsHeaders } from "../_shared/cors.ts";
 import { makeServiceClient, writeStepLog } from "../_shared/candidates.ts";
-import { sendTransactionalEmail } from "../_shared/brevo.ts";
+import {
+  sendTransactionalEmail,
+  logEmailSkipped,
+  getRecentSendWithinWindow,
+} from "../_shared/brevo.ts";
 import { authenticateAdminOrService } from "../_shared/admin-auth.ts";
 
 const ENDPOINT = "fire-email-2";
+const EMAIL_NUMBER = 2;
+const TEMPLATE_KEY = "b2c_email_2";
+const DUP_WINDOW_MINUTES = 10;
 
-function unauthorized() {
-  return new Response(JSON.stringify({ error: "Unauthorized" }), {
-    status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
 function badRequest(body: unknown) {
   return new Response(JSON.stringify(body), {
     status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -37,15 +40,38 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { return badRequest({ error: "Invalid JSON body" }); }
   const candidateId = body.candidate_id;
   const operatorUserId = auth.operatorUserId ?? body.operator_user_id ?? null;
+  const force = body.force === true;
   if (!candidateId || typeof candidateId !== "string") return badRequest({ error: "candidate_id required" });
 
   try {
     const { data: candidate, error: cErr } = await supabase
       .from("candidates")
-      .select("id, email, full_name, current_journey_type, organization_id")
+      .select("id, email, full_name, communication_status, current_journey_type, organization_id")
       .eq("id", candidateId)
       .maybeSingle();
     if (cErr || !candidate) return badRequest({ error: "candidate not found" });
+
+    if (!force) {
+      const recent = await getRecentSendWithinWindow(supabase, {
+        candidateId: candidate.id, emailNumber: EMAIL_NUMBER, windowMinutes: DUP_WINDOW_MINUTES,
+      });
+      if (recent) {
+        await logEmailSkipped(supabase, {
+          templateKey: TEMPLATE_KEY, candidateId: candidate.id, candidateEmail: candidate.email,
+          sourceEndpoint: ENDPOINT, emailNumber: EMAIL_NUMBER,
+          status: candidate.communication_status,
+          reason: `duplicate_send_within_${DUP_WINDOW_MINUTES}m`,
+          triggerSource: "manual", operatorUserId, eventType: "email_skipped_duplicate",
+        });
+        return new Response(JSON.stringify({
+          success: false, skipped: true, reason: "duplicate_send_within_window",
+          window_minutes: DUP_WINDOW_MINUTES,
+          previous_send_at: recent.created_at,
+          previous_brevo_message_id: recent.payload?.brevo_message_id ?? null,
+          hint: "pass { force: true } to override",
+        }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
 
     const firstName =
       (candidate.full_name && candidate.full_name.trim().split(/\s+/)[0]) ||
@@ -61,20 +87,12 @@ Deno.serve(async (req) => {
     });
 
     const sendResult = await sendTransactionalEmail(supabase, {
-      templateKey: "b2c_email_2", recipientEmail: candidate.email,
-      candidateId: candidate.id, sourceEndpoint: ENDPOINT, emailNumber: 2,
+      templateKey: TEMPLATE_KEY, recipientEmail: candidate.email,
+      candidateId: candidate.id, sourceEndpoint: ENDPOINT, emailNumber: EMAIL_NUMBER,
       mergeParams: { first_name: firstName },
-    });
-
-    await supabase.from("audit_log").insert({
-      event_type: "email_sent_manual",
-      payload: {
-        endpoint: ENDPOINT, email_number: 2,
-        candidate_id: candidate.id, candidate_email: candidate.email,
-        operator_user_id: operatorUserId,
-        brevo_message_id: sendResult.messageId ?? null,
-        ok: sendResult.ok, error: sendResult.ok ? null : sendResult.error,
-      },
+      triggerSource: "manual",
+      communicationStatus: candidate.communication_status,
+      operatorUserId,
     });
 
     return new Response(
@@ -82,6 +100,7 @@ Deno.serve(async (req) => {
         success: sendResult.ok,
         brevo_message_id: sendResult.messageId ?? null,
         step_log_id: step.id,
+        forced: force,
         error: sendResult.ok ? undefined : sendResult.error,
       }),
       { status: sendResult.ok ? 200 : 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
