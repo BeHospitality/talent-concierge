@@ -338,6 +338,7 @@ export type Database = {
       }
       candidates: {
         Row: {
+          candidate_state: string | null
           communication_status: string
           created_at: string
           current_journey_type: string
@@ -346,24 +347,39 @@ export type Database = {
           days_in_stage: number
           desired_location: string | null
           email: string
+          email_1_sent_at: string | null
+          email_2_sent_at: string | null
+          email_3_sent_at: string | null
+          email_4_sent_at: string | null
+          email_5_sent_at: string | null
           engagement_score: number
+          first_name: string | null
           full_name: string
           id: string
           last_contact_date: string | null
+          last_name: string | null
+          last_nudge_sent_at: string | null
+          last_post_profile_check_in_at: string | null
           next_checkin_date: string | null
           organization_id: string
           phone: string | null
           photo_url: string | null
+          post_profile_check_in_count: number
           prescreening_complete: boolean
+          profile_complete: boolean
+          profile_complete_at: string | null
           referral_source: string | null
           resume_filename: string | null
           resume_uploaded_at: string | null
           resume_url: string | null
           risk_level: Database["public"]["Enums"]["risk_level"]
+          stall_touch_count: number
           updated_at: string
           video_clips: Json | null
+          video_url_broken_at: string | null
         }
         Insert: {
+          candidate_state?: string | null
           communication_status?: string
           created_at?: string
           current_journey_type?: string
@@ -372,24 +388,39 @@ export type Database = {
           days_in_stage?: number
           desired_location?: string | null
           email: string
+          email_1_sent_at?: string | null
+          email_2_sent_at?: string | null
+          email_3_sent_at?: string | null
+          email_4_sent_at?: string | null
+          email_5_sent_at?: string | null
           engagement_score?: number
+          first_name?: string | null
           full_name: string
           id?: string
           last_contact_date?: string | null
+          last_name?: string | null
+          last_nudge_sent_at?: string | null
+          last_post_profile_check_in_at?: string | null
           next_checkin_date?: string | null
           organization_id: string
           phone?: string | null
           photo_url?: string | null
+          post_profile_check_in_count?: number
           prescreening_complete?: boolean
+          profile_complete?: boolean
+          profile_complete_at?: string | null
           referral_source?: string | null
           resume_filename?: string | null
           resume_uploaded_at?: string | null
           resume_url?: string | null
           risk_level?: Database["public"]["Enums"]["risk_level"]
+          stall_touch_count?: number
           updated_at?: string
           video_clips?: Json | null
+          video_url_broken_at?: string | null
         }
         Update: {
+          candidate_state?: string | null
           communication_status?: string
           created_at?: string
           current_journey_type?: string
@@ -398,22 +429,36 @@ export type Database = {
           days_in_stage?: number
           desired_location?: string | null
           email?: string
+          email_1_sent_at?: string | null
+          email_2_sent_at?: string | null
+          email_3_sent_at?: string | null
+          email_4_sent_at?: string | null
+          email_5_sent_at?: string | null
           engagement_score?: number
+          first_name?: string | null
           full_name?: string
           id?: string
           last_contact_date?: string | null
+          last_name?: string | null
+          last_nudge_sent_at?: string | null
+          last_post_profile_check_in_at?: string | null
           next_checkin_date?: string | null
           organization_id?: string
           phone?: string | null
           photo_url?: string | null
+          post_profile_check_in_count?: number
           prescreening_complete?: boolean
+          profile_complete?: boolean
+          profile_complete_at?: string | null
           referral_source?: string | null
           resume_filename?: string | null
           resume_uploaded_at?: string | null
           resume_url?: string | null
           risk_level?: Database["public"]["Enums"]["risk_level"]
+          stall_touch_count?: number
           updated_at?: string
           video_clips?: Json | null
+          video_url_broken_at?: string | null
         }
         Relationships: [
           {
