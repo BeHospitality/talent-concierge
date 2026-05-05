@@ -122,15 +122,19 @@ Deno.serve(async (req) => {
           completed_steps: formatStepList(completedSteps),
           outstanding_steps: formatStepList(outstandingSteps),
         },
+        triggerSource: "auto",
+        communicationStatus: candidate.communicationStatus,
       });
     } else {
       await logEmailSkipped(supabase, {
         templateKey: "b2c_email_3",
         candidateId: candidate.candidateId,
+        candidateEmail: email,
         sourceEndpoint: ENDPOINT,
         emailNumber: 3,
         status: candidate.communicationStatus,
         reason: `communication_status='${candidate.communicationStatus}' — auto-fire suppressed`,
+        triggerSource: "auto",
       });
     }
 
