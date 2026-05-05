@@ -6,10 +6,17 @@
 
 import { corsHeaders } from "../_shared/cors.ts";
 import { makeServiceClient, writeStepLog } from "../_shared/candidates.ts";
-import { sendTransactionalEmail, logEmailSkipped } from "../_shared/brevo.ts";
+import {
+  sendTransactionalEmail,
+  logEmailSkipped,
+  getRecentSendWithinWindow,
+} from "../_shared/brevo.ts";
 import { authenticateAdminOrService } from "../_shared/admin-auth.ts";
 
 const ENDPOINT = "fire-email-4";
+const EMAIL_NUMBER = 4;
+const TEMPLATE_KEY = "b2c_email_4";
+const DUP_WINDOW_MINUTES = 10;
 
 function unauthorized(msg = "Unauthorized") {
   return new Response(JSON.stringify({ error: msg }), {
@@ -88,6 +95,29 @@ async function handle(supabase: any, body: any, operatorUserId: string | null): 
 
   const journeyType = candidate.current_journey_type || "h2b_phase1_screening";
 
+  // --- DUP-01 guard ---
+  if (!force) {
+    const recent = await getRecentSendWithinWindow(supabase, {
+      candidateId: candidate.id, emailNumber: EMAIL_NUMBER, windowMinutes: DUP_WINDOW_MINUTES,
+    });
+    if (recent) {
+      await logEmailSkipped(supabase, {
+        templateKey: TEMPLATE_KEY, candidateId: candidate.id, candidateEmail: candidate.email,
+        sourceEndpoint: ENDPOINT, emailNumber: EMAIL_NUMBER,
+        status: candidate.communication_status,
+        reason: `duplicate_send_within_${DUP_WINDOW_MINUTES}m`,
+        triggerSource: "manual", operatorUserId, eventType: "email_skipped_duplicate",
+      });
+      return new Response(JSON.stringify({
+        success: false, skipped: true, reason: "duplicate_send_within_window",
+        window_minutes: DUP_WINDOW_MINUTES,
+        previous_send_at: recent.created_at,
+        previous_brevo_message_id: recent.payload?.brevo_message_id ?? null,
+        hint: "pass { force: true } to override",
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+  }
+
   // --- Completeness check ---
   const missing: string[] = [];
   if (!force) {
@@ -112,8 +142,6 @@ async function handle(supabase: any, body: any, operatorUserId: string | null): 
     const clips = Array.isArray(candidate.video_clips) ? candidate.video_clips : [];
     if (clips.length === 0) missing.push("video_clip");
 
-    // candidate_preferences existence — table is not present in the current schema;
-    // treat as satisfied if the table exists with a row, otherwise skip silently.
     try {
       const { data: prefs, error: prefsErr } = await supabase
         .from("candidate_preferences" as any)
@@ -137,12 +165,10 @@ async function handle(supabase: any, body: any, operatorUserId: string | null): 
     });
   }
 
-  // --- Compute first_name ---
   const firstName =
     (candidate.full_name && candidate.full_name.trim().split(/\s+/)[0]) ||
     candidate.email.split("@")[0];
 
-  // --- Write step 4 log row (idempotent) ---
   const step = await writeStepLog(supabase, {
     candidateEmail: candidate.email,
     candidateId: candidate.id,
@@ -154,15 +180,17 @@ async function handle(supabase: any, body: any, operatorUserId: string | null): 
     payload: { force, fired_at: new Date().toISOString() },
   });
 
-  // --- Send Email #4 ---
   if (candidate.communication_status === "paused") {
     await logEmailSkipped(supabase, {
-      templateKey: "b2c_email_4",
+      templateKey: TEMPLATE_KEY,
       candidateId: candidate.id,
+      candidateEmail: candidate.email,
       sourceEndpoint: ENDPOINT,
-      emailNumber: 4,
+      emailNumber: EMAIL_NUMBER,
       status: candidate.communication_status,
       reason: "candidate is paused — manual fire suppressed",
+      triggerSource: "manual",
+      operatorUserId,
     });
     return new Response(
       JSON.stringify({ success: false, skipped: true, reason: "candidate paused" }),
@@ -171,15 +199,17 @@ async function handle(supabase: any, body: any, operatorUserId: string | null): 
   }
 
   const sendResult = await sendTransactionalEmail(supabase, {
-    templateKey: "b2c_email_4",
+    templateKey: TEMPLATE_KEY,
     recipientEmail: candidate.email,
     candidateId: candidate.id,
     sourceEndpoint: ENDPOINT,
-    emailNumber: 4,
+    emailNumber: EMAIL_NUMBER,
     mergeParams: { first_name: firstName },
+    triggerSource: "manual",
+    communicationStatus: candidate.communication_status,
+    operatorUserId,
   });
 
-  // --- Mark candidate complete on successful send ---
   if (sendResult.ok) {
     await supabase
       .from("candidates")
@@ -187,18 +217,6 @@ async function handle(supabase: any, body: any, operatorUserId: string | null): 
       .eq("id", candidate.id);
   }
 
-  // Audit (manual fire) so the Career Agent Controls panel reflects this.
-  await supabase.from("audit_log").insert({
-    event_type: "email_sent_manual",
-    payload: {
-      endpoint: ENDPOINT, email_number: 4,
-      candidate_id: candidate.id, candidate_email: candidate.email,
-      operator_user_id: operatorUserId,
-      brevo_message_id: sendResult.messageId ?? null,
-      ok: sendResult.ok, forced: force,
-      error: sendResult.ok ? null : sendResult.error,
-    },
-  });
 
   return new Response(
     JSON.stringify({

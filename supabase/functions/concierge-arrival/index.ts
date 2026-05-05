@@ -172,16 +172,20 @@ Deno.serve(async (req) => {
           mergeParams: {
             first_name: candidate.firstName || "there",
           },
+          triggerSource: "auto",
+          communicationStatus: candidate.communicationStatus,
         });
       }
     } else {
       await logEmailSkipped(supabase, {
         templateKey: "b2c_email_2",
         candidateId: candidate.candidateId,
+        candidateEmail: email,
         sourceEndpoint: ENDPOINT,
         emailNumber: 2,
         status: candidate.communicationStatus,
         reason: `communication_status='${candidate.communicationStatus}' — auto-fire suppressed`,
+        triggerSource: "auto",
       });
     }
 
