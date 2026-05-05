@@ -6,6 +6,8 @@ export type CareerAgentEventType =
   | "email_sent_manual"
   | "email_skipped_status"
   | "email_skipped_recency"
+  | "email_skipped_duplicate"
+  | "email_failed"
   | "pathway_overridden";
 
 export interface CareerAgentAuditRow {
@@ -20,6 +22,8 @@ const RELEVANT_EVENTS: CareerAgentEventType[] = [
   "email_sent_manual",
   "email_skipped_status",
   "email_skipped_recency",
+  "email_skipped_duplicate",
+  "email_failed",
   "pathway_overridden",
 ];
 
